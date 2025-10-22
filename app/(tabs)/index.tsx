@@ -2,6 +2,7 @@ import { onValue, ref } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { db } from "../../firebaseConfig";
+import "../../global.css";
 
 //  Tipos de datos
 type Lectura = {
@@ -42,7 +43,7 @@ export default function App() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.item}>
-            <Text>Pulso: {item.pulso}</Text>
+            <Text className="text-red-500 text-3xl">Pulso: {item.pulso}</Text>
             <Text>Oxígeno: {item.oxigeno}%</Text>
             <Text>Distancia: {item.distancia} km</Text>
             <Text>Fecha: {new Date(item.timestamp).toLocaleDateString("en-US")}</Text>
