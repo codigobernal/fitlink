@@ -7,7 +7,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-export const unstable_settings = { anchor: "(tabs)" };
+// export const unstable_settings = { anchor: "index" };
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -26,6 +26,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
       </Stack>

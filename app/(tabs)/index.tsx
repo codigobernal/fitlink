@@ -1,191 +1,147 @@
-// app/index.tsx
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Image,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useMemo, useState } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { BarChart } from 'react-native-chart-kit';
+import { db } from '../../firebaseConfig';
+import { onValue, ref } from 'firebase/database';
 
-export default function Landing() {
-  const { width, height } = useWindowDimensions();
+type Lectura = {
+  id: string;
+  pulso: number;
+  oxigeno: number;
+  distancia: number;
+  timestamp: any;
+};
 
-  // ====== Escala y medidas base ======
-  const baseW = 390;
-  const scale = Math.min(1.2, Math.max(0.7, width / baseW));
+function toMillis(ts: any): number {
+  if (typeof ts === 'number') return ts > 1e12 ? ts : ts * 1000;
+  const n = Number(ts);
+  if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
+  const d = new Date(ts);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
 
-  const brandSize = 40 * scale;
-  const subtitleSize = 15 * scale;
-  const lineHeight = 22 * scale;
-  const btnH = Math.round(44 * scale);
-  const btnRadius = Math.round(16 * scale);
-  const contentPadding = Math.max(20, 24 * scale);
-  const maxContentW = Math.min(360, width - 2 * contentPadding);
+export default function Home() {
+  const [lecturas, setLecturas] = useState<Lectura[]>([]);
 
-  // ====== Cuadros/Imágenes con tamaños de diseño ======
-  const DESIGN_W1 = 264; // A
-  const DESIGN_H1 = 345;
-  const DESIGN_W2 = 335; // B (la grande)
-  const DESIGN_H2 = 354;
+  useEffect(() => {
+    const lecturasRef = ref(db, 'lecturas');
+    const unsub = onValue(lecturasRef, (snap) => {
+      const data = snap.val();
+      if (!data) return setLecturas([]);
+      const arr: Lectura[] = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
+      arr.sort((a, b) => toMillis(b.timestamp) - toMillis(a.timestamp));
+      setLecturas(arr);
+    });
+    return () => unsub();
+  }, []);
 
-  // Nunca exceder el ancho disponible (dejamos 32px margen total)
-  const maxImageWidth = width - 32;
-  const imgScale = Math.min(1, maxImageWidth / DESIGN_W2);
+  const latest = lecturas[0];
+  const lastMs = latest ? toMillis(latest.timestamp) : 0;
+  const connected = lastMs > 0 && Date.now() - lastMs < 2 * 60 * 1000; // 2 min
 
-  const imgA_W = Math.round(DESIGN_W1 * imgScale);
-  const imgA_H = Math.round(DESIGN_H1 * imgScale);
-  const imgB_W = Math.round(DESIGN_W2 * imgScale);
-  const imgB_H = Math.round(DESIGN_H2 * imgScale);
+  const last12 = useMemo(() => lecturas.slice(0, 12).reverse(), [lecturas]);
+  const labels = last12.map((l, i) => (i % 3 === 0 ? new Date(toMillis(l.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''));
+  const pulso = last12.map((l) => l.pulso ?? 0);
 
-  // Posicionamiento relativo (ajusta los offsets a tu gusto)
-  const imgB_left = Math.round((width - imgB_W) / 2 + 20 * imgScale);
-  const imgB_top = Math.round(height * 0.38);
-
-  const imgA_left = Math.round((width - imgA_W) / 2 - 30 * imgScale);
-  const imgA_top = Math.round(height * 0.18);
-
-  // Evitar que el contenido quede oculto tras la barra de tabs
-  const tabsSafety = 80;
+  const screenWidth = Dimensions.get('window').width;
+  const chartConfig = {
+    backgroundGradientFrom: '#111',
+    backgroundGradientTo: '#111',
+    color: (opacity = 1) => `rgba(166, 255, 0, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(255,255,255,${opacity})`,
+    barPercentage: 0.6,
+    fillShadowGradientFrom: '#A6FF00',
+    fillShadowGradientTo: '#A6FF00',
+  } as const;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar style="light" />
-      <View style={styles.container}>
-        {/* Fondo negro + imágenes decorativas */}
-        <Image
-          source={{ uri: "https://placehold.co/335x354" }}
-          style={{
-            position: "absolute",
-            width: imgB_W,
-            height: imgB_H,
-            left: imgB_left,
-            top: imgB_top,
-            transform: [{ rotate: "180deg" }],
-            borderRadius: 8,
-            flexShrink: 0,
-            opacity: 0.85,
-          }}
-          resizeMode="cover"
-        />
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.h1}>Inicio</Text>
 
-        <Image
-          source={{ uri: "https://placehold.co/264x345" }}
-          style={{
-            position: "absolute",
-            width: imgA_W,
-            height: imgA_H,
-            left: imgA_left,
-            top: imgA_top,
-            borderRadius: 8,
-            flexShrink: 0,
-            opacity: 0.9,
-          }}
-          resizeMode="cover"
-        />
-
-        {/* Contenido inferior */}
-        <View
-          style={[
-            styles.content,
-            { paddingHorizontal: contentPadding, paddingBottom: contentPadding + tabsSafety / 2 },
-          ]}
-        >
-          <View style={{ width: maxContentW, alignSelf: "flex-start" }}>
-            <Text
-              style={[
-                styles.brand,
-                {
-                  fontSize: brandSize,
-                  fontFamily: "SFProRounded-Semibold", // usa fallback si no está
-                },
-              ]}
-            >
-              fitLink
-            </Text>
-
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  fontSize: subtitleSize,
-                  lineHeight,
-                  fontFamily: "SFProRounded-Semibold", // 600
-                },
-              ]}
-              numberOfLines={3}
-            >
-              Mide tu esfuerzo, conecta fitLink y desbloquea el análisis de tu rendimiento al instante.
-            </Text>
-
-            <Pressable
-              onPress={() => router.push("/login")}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                { height: btnH, borderRadius: btnRadius, opacity: pressed ? 0.85 : 1 },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.primaryText,
-                  { fontSize: 16 * scale, fontFamily: "SFProRounded-Semibold" },
-                ]}
-              >
-                Iniciar Sesión
+        {/* Estado de conexión */}
+        <View style={styles.cardSmall}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={styles.iconCircle} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.caption}>Estado:</Text>
+              <Text style={[styles.status, { color: connected ? '#A6FF00' : '#FF5757' }]}>
+                {connected ? 'Conectado' : 'Desconectado'}
               </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => router.push("/register")}
-              style={({ pressed }) => [
-                styles.ghostBtn,
-                { height: btnH, borderRadius: btnRadius, borderWidth: 1, opacity: pressed ? 0.85 : 1 },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.ghostText,
-                  { fontSize: 16 * scale, fontFamily: "SFProRounded-Semibold" },
-                ]}
-              >
-                Registrarse
-              </Text>
-            </Pressable>
+            </View>
+            <Text style={styles.link}>Conectar</Text>
           </View>
         </View>
-      </View>
+
+        {/* Gráfica pulso */}
+        <View style={styles.cardLarge}>
+          <Text style={styles.cardTitle}>Pulso</Text>
+          {last12.length > 1 ? (
+            <BarChart
+              data={{ labels, datasets: [{ data: pulso }] }}
+              width={screenWidth - 60}
+              height={160}
+              chartConfig={chartConfig}
+              withInnerLines={false}
+              fromZero
+              style={{ borderRadius: 16 }}
+            />
+          ) : (
+            <Text style={styles.empty}>Sin datos recientes</Text>
+          )}
+        </View>
+
+        {/* Resumen última lectura */}
+        <View style={styles.cardLarge}>
+          <Text style={styles.cardTitle}>Última lectura</Text>
+          {latest ? (
+            <View style={{ gap: 6 }}>
+              <Text style={styles.row}>Pulso: {latest.pulso}</Text>
+              <Text style={styles.row}>Oxígeno: {latest.oxigeno}%</Text>
+              <Text style={styles.row}>Distancia: {latest.distancia} km</Text>
+              <Text style={styles.row}>Fecha: {new Date(lastMs).toLocaleString()}</Text>
+            </View>
+          ) : (
+            <Text style={styles.empty}>Aún no hay lecturas</Text>
+          )}
+        </View>
+
+        {/* Historial breve */}
+        <Text style={styles.section}>Historial</Text>
+        {lecturas.slice(0, 3).map((it) => (
+          <View key={it.id} style={styles.rowCard}>
+            <View style={styles.dot} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowStrong}>{it.pulso} BPM</Text>
+              <Text style={styles.rowSub}>{new Date(toMillis(it.timestamp)).toLocaleString()}</Text>
+            </View>
+            <Text style={styles.rowRight}>{it.oxigeno}% O2</Text>
+          </View>
+        ))}
+
+        <View style={{ height: 80 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "black" },
-  container: { flex: 1, backgroundColor: "black" },
-  content: { flex: 1, justifyContent: "flex-end", zIndex: 2 },
-  brand: {
-    color: "#FFF",
-    marginBottom: 10,
-  },
-  subtitle: {
-    color: "#FFF",
-    marginBottom: 16,
-  },
-  primaryBtn: {
-    backgroundColor: "#A6FF00",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-  },
-  primaryText: { color: "#000", fontWeight: "600" },
-  ghostBtn: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-    borderColor: "#FFF",
-    backgroundColor: "transparent",
-  },
-  ghostText: { color: "#FFF", fontWeight: "600" },
+  safe: { flex: 1, backgroundColor: 'black' },
+  scroll: { padding: 20, paddingBottom: 24 },
+  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 8, marginBottom: 12 },
+  caption: { color: 'white', opacity: 0.7, fontSize: 12 },
+  status: { fontSize: 18, fontFamily: 'SFProRounded-Semibold' },
+  link: { color: 'white', opacity: 0.9, fontSize: 12 },
+  cardSmall: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 16 },
+  cardLarge: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 16 },
+  cardTitle: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold', marginBottom: 8 },
+  empty: { color: '#9E9EA0' },
+  iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'white' },
+  section: { color: 'white', fontSize: 20, fontFamily: 'SFProRounded-Semibold', marginTop: 6, marginBottom: 8 },
+  row: { color: 'white' },
+  rowCard: { backgroundColor: '#1C1C1E', borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dot: { width: 20, height: 20, backgroundColor: '#A6FF00', borderRadius: 10 },
+  rowStrong: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
+  rowSub: { color: '#9E9EA0', fontSize: 12 },
+  rowRight: { color: 'white', fontSize: 12 },
 });
