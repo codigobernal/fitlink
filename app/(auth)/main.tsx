@@ -14,3 +14,4 @@ const styles = StyleSheet.create({
   title: { color: 'white', fontSize: 20, fontWeight: '700', marginBottom: 6 },
   subtitle: { color: 'white', opacity: 0.8 },
 });
+ 
