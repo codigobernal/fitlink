@@ -10,19 +10,19 @@ const ACTIVE_CIRCLE = '#A6FF00';
 
 function circleIcon(icon: keyof typeof Ionicons.glyphMap) {
   return ({ focused }: { focused: boolean }) => (
-    <View
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Ionicons name={icon} size={18} color={focused ? '#111' : '#CFCFCF'} />
-    </View>
-  );
+      <View
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name={icon} size={17} color={focused ? '#111' : '#CFCFCF'} />
+      </View>
+    );
 }
 
 export default function TabLayout() {
@@ -34,7 +34,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#2A2A2C',
           borderTopColor: '#2A2A2C',
-          height: 64,
+          height: 68,
           paddingBottom: 6,
           paddingTop: 6,
         },
@@ -69,4 +69,3 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-
