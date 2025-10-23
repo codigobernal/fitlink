@@ -1,92 +1,99 @@
-import { onValue, ref } from "firebase/database";
-import React, { useEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
-import { LineChart } from "react-native-chart-kit";
-import { db } from "../../firebaseConfig";
+import React, { useMemo } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Rect, Line as SvgLine, Circle as SvgCircle, Polyline, Text as SvgText } from 'react-native-svg';
 
-// Tipos de datos
-type Lectura = {
-  id: string;
-  pulso: number;
-  oxigeno: number;
-  distancia: number;
-  timestamp: string;
-};
-
-export default function App() {
-  const [lecturas, setLecturas] = useState<Lectura[]>([]);
-
-  useEffect(() => {
-    const lecturasRef = ref(db, "lecturas");
-
-    const unsubscribe = onValue(lecturasRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const lecturasArray = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
-        setLecturas(lecturasArray);
-      } else {
-        setLecturas([]);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Datos para la gráfica
-  const labels = lecturas.map((l) => new Date(l.timestamp).toLocaleTimeString());
-  const pulsoData = lecturas.map((l) => l.pulso);
-  const oxigenoData = lecturas.map((l) => l.oxigeno);
-
-  const screenWidth = Dimensions.get("window").width;
-
-  const chartConfig = {
-    backgroundGradientFrom: "#fff",
-    backgroundGradientTo: "#fff",
-    color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    strokeWidth: 2,
-    decimalPlaces: 0,
-  };
+export default function Estadisticas() {
+  const route = useMemo(
+    () => [
+      { x: 0.08, y: 0.80 },
+      { x: 0.16, y: 0.70 },
+      { x: 0.28, y: 0.62 },
+      { x: 0.40, y: 0.55 },
+      { x: 0.54, y: 0.50 },
+      { x: 0.68, y: 0.46 },
+      { x: 0.82, y: 0.40 },
+      { x: 0.92, y: 0.35 },
+    ],
+    []
+  );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Lecturas del ESP32</Text>
-
-      {lecturas.length > 0 && (
-        <LineChart
-          data={{
-            labels,
-            datasets: [
-              { data: pulsoData, color: () => "rgba(255,0,0,1)", strokeWidth: 2 },
-              { data: oxigenoData, color: () => "rgba(0,0,255,1)", strokeWidth: 2 },
-            ],
-            legend: ["Pulso", "Oxígeno"],
-          }}
-          width={screenWidth - 40}
-          height={250}
-          chartConfig={chartConfig}
-          bezier
-          style={{ marginVertical: 20, borderRadius: 16 }}
-        />
-      )}
-
-      {lecturas.map((item) => (
-        <View key={item.id} style={styles.item}>
-          <Text>Pulso: {item.pulso}</Text>
-          <Text>Oxígeno: {item.oxigeno}%</Text>
-          <Text>Distancia: {item.distancia} km</Text>
-          <Text>Fecha: {new Date(item.timestamp).toLocaleDateString("en-US")}</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.headerRow}>
+          <Text style={styles.h1}>Estadisticas</Text>
+          <View style={styles.avatar} />
         </View>
-      ))}
-    </ScrollView>
+
+        <View style={[styles.card, { padding: 12 }]}> 
+          <Text style={[styles.caption, { marginBottom: 8 }]}>Mapa de actividad</Text>
+          <View style={styles.pitchWrap}>
+            <SoccerField points={route} />
+          </View>
+        </View>
+
+        <View style={[styles.card, { padding: 12 }]}> 
+          <Text style={[styles.caption, { marginBottom: 8 }]}>Lorem ipsum dolor sit <Text style={{ color: '#A6FF00' }}>AMET</Text></Text>
+          <View style={styles.grid}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <View key={i} style={styles.gridItem}>
+                <Text style={styles.gridTop}>7:15</Text>
+                <Text style={styles.gridBottom}>Pulso</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+type Point = { x: number; y: number };
+
+function SoccerField({ points = [] as Point[] }) {
+  const WIDTH = 160;
+  const HEIGHT = 100;
+  const toPolyline = (items: Point[]) =>
+    items.map((p) => `${(p.x * WIDTH).toFixed(2)},${(p.y * HEIGHT).toFixed(2)}`).join(' ');
+
+  const hasRoute = points.length > 1;
+  const start = hasRoute ? { x: points[0].x * WIDTH, y: points[0].y * HEIGHT } : null;
+  const end = hasRoute ? { x: points[points.length - 1].x * WIDTH, y: points[points.length - 1].y * HEIGHT } : null;
+
+  return (
+    <Svg width="100%" height="100%" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+      <Rect x="0" y="0" width={WIDTH} height={HEIGHT} rx="12" fill="#89FF00" />
+      <Rect x="3" y="3" width={WIDTH - 6} height={HEIGHT - 6} rx="10" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <SvgLine x1={WIDTH / 2} y1={3} x2={WIDTH / 2} y2={HEIGHT - 3} stroke="#FFFFFF" strokeWidth="1.5" />
+      <SvgCircle cx={WIDTH / 2} cy={HEIGHT / 2} r="9" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={HEIGHT / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={WIDTH - 27} y={HEIGHT / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={HEIGHT / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={WIDTH - 15} y={HEIGHT / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+
+      {hasRoute && (
+        <Polyline points={toPolyline(points)} stroke="#165B33" strokeOpacity="0.9" strokeWidth="2" fill="none" />
+      )}
+      {start && <SvgCircle cx={start.x} cy={start.y} r="3" fill="#00C853" />}
+      {end && <SvgCircle cx={end.x} cy={end.y} r="3.4" fill="#FF3B30" />}
+      {start && <SvgText x={start.x + 3} y={start.y - 3} fill="#0B3D1E" fontSize="4" fontWeight="700">A</SvgText>}
+      {end && <SvgText x={end.x + 3} y={end.y - 3} fill="#5B1212" fontSize="4" fontWeight="700">B</SvgText>}
+    </Svg>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 50 },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
-  item: { padding: 15, borderBottomWidth: 1, borderColor: "#ccc" },
+  safe: { flex: 1, backgroundColor: 'black' },
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold' },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF' },
+  caption: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 12 },
+  card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 16 },
+  pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 14 },
+  gridItem: { width: '30%', alignItems: 'center' },
+  gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
+  gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
 });
+
