@@ -95,19 +95,19 @@ export default function Home() {
           </View>
         </View>
 
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthPulse(Math.max(160, Math.floor(e.nativeEvent.layout.width - 24)))}>
+        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthPulse(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
           <Text style={styles.cardTitle}>Pulso</Text>
           {last12.length > 1 ? (
-            <BarChart data={{ labels, datasets: [{ data: pulsoValues }] }} width={widthPulse} height={160} chartConfig={chartConfig} withInnerLines={false} fromZero style={{ borderRadius: 16 }} />
+            <BarChart data={{ labels, datasets: [{ data: pulsoValues }] }} width={widthPulse} height={160} chartConfig={chartConfig} withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} />
           ) : (
             <Text style={styles.empty}>Sin datos recientes</Text>
           )}
         </View>
 
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthOxy(Math.max(160, Math.floor(e.nativeEvent.layout.width - 24)))}>
+        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthOxy(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
           <Text style={styles.cardTitle}>Oxigeno</Text>
           {last12.length > 1 ? (
-            <LineChart data={{ labels, datasets: [{ data: oxigenoValues }] }} width={widthOxy} height={160} chartConfig={{ ...chartConfig, color: (o=1)=>`rgba(255,255,255,${o})`, fillShadowGradientFrom: '#FFFFFF', fillShadowGradientTo: '#FFFFFF' }} withDots bezier withInnerLines={false} fromZero style={{ borderRadius: 16 }} />
+            <LineChart data={{ labels, datasets: [{ data: oxigenoValues }] }} width={widthOxy} height={160} chartConfig={{ ...chartConfig, color: (o=1)=>`rgba(255,255,255,${o})`, fillShadowGradientFrom: '#FFFFFF', fillShadowGradientTo: '#FFFFFF' }} withDots bezier withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} />
           ) : (
             <Text style={styles.empty}>Sin datos recientes</Text>
           )}
@@ -169,9 +169,9 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold' },
+  scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF' },
   caption: { color: 'white', opacity: 0.7, fontSize: 12, fontFamily: 'SFProRounded-Regular' },
   status: { fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
@@ -193,4 +193,3 @@ const styles = StyleSheet.create({
   rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
   rowRight: { color: 'white', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
 });
-

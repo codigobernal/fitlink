@@ -2,6 +2,8 @@ import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { auth } from '../../../firebaseConfig';
+import { signOut } from 'firebase/auth';
 
 const OPTION_STYLES = {
   change: { background: '#2F3136', color: '#FFD166' },
@@ -56,6 +58,13 @@ export default function Informacion() {
           color={OPTION_STYLES.help.color}
           onPress={() => router.push('/(tabs)/Perfil/help')}
         />
+        <Option
+          icon="log-out"
+          label="Cerrar sesión"
+          background="#3B0F0F"
+          color="#FF6B6B"
+          onPress={async () => { try { await signOut(auth); router.replace('/(auth)/login'); } catch {} }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -87,14 +96,13 @@ function Option({ icon, label, onPress, background, color }: OptionProps) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginBottom: 10 },
+  scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
+  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 12 },
   row: { padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFF' },
   name: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   email: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular', fontSize: 12 },
   optIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  optionLabel: { color: 'white', fontFamily: 'SFProRounded-Regular' },
+  optionLabel: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 15 },
 });
-

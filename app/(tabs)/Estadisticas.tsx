@@ -84,9 +84,9 @@ function SoccerField({ points = [] as Point[] }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold' },
+  scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF' },
   caption: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 12 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 16 },
@@ -96,4 +96,3 @@ const styles = StyleSheet.create({
   gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
   gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
 });
-
