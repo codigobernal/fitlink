@@ -1,18 +1,13 @@
-import { onValue, ref } from "firebase/database";
-import React, { useEffect, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
-import { db } from "../../firebaseConfig";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, Dimensions, ScrollView, Animated, Alert } from 'react-native';
+import { BarChart, LineChart } from 'react-native-chart-kit';
+import { Ionicons } from '@expo/vector-icons';
+import { onValue, ref, query, orderByChild, limitToLast, remove } from 'firebase/database';
+import { db } from '../../firebaseConfig';
 
-//  Tipos de datos
-type Lectura = {
-  id: string;
-  pulso: number;
-  oxigeno: number;
-  distancia: number;
-  timestamp: any;
-};
+type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
 
-function toMillis(ts: any): number {
+function toMillis(ts: any) {
   if (typeof ts === 'number') return ts > 1e12 ? ts : ts * 1000;
   const n = Number(ts);
   if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000;
@@ -40,11 +35,9 @@ export default function Home() {
   const connected = lastMs > 0 && Date.now() - lastMs < 2 * 60 * 1000;
 
   const last12 = useMemo(() => lecturas.slice(0, 12).reverse(), [lecturas]);
-  const labels = last12.map((item, index) =>
-    index % 3 === 0 ? new Date(toMillis(item.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-  );
-  const pulsoValues = last12.map((item) => item.pulso ?? 0);
-  const oxigenoValues = last12.map((item) => item.oxigeno ?? 0);
+  const labels = last12.map((item, idx) => (idx % 3 === 0 ? new Date(toMillis(item.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''));
+  const pulsoValues = last12.map((i) => i.pulso ?? 0);
+  const oxigenoValues = last12.map((i) => i.oxigeno ?? 0);
 
   const chartConfig = {
     backgroundGradientFrom: '#111',
@@ -61,10 +54,7 @@ export default function Home() {
   const bpm = latest?.pulso ?? 60;
   const bpmGood = bpm >= 60 && bpm <= 100;
   const heartScale = useRef(new Animated.Value(1)).current;
-  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
-
   useEffect(() => {
-    animationRef.current?.stop();
     const clamped = Math.max(40, Math.min(160, bpm || 60));
     const beat = Math.round(60000 / clamped / 2);
     const amplitude = bpmGood ? 0.25 : 0.08;
@@ -75,71 +65,49 @@ export default function Home() {
       ]),
       { resetBeforeIteration: true }
     );
-    animationRef.current = anim;
     anim.start();
     return () => anim.stop();
-  }, [bpm, bpmGood, heartScale]);
+  }, [bpm, bpmGood]);
 
   const [widthPulse, setWidthPulse] = useState(Dimensions.get('window').width - 64);
   const [widthOxy, setWidthOxy] = useState(Dimensions.get('window').width - 64);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Lecturas del ESP32</Text>
-      <FlatList
-        data={lecturas}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text>Pulso: {item.pulso}</Text>
-            <Text>Oxígeno: {item.oxigeno}%</Text>
-            <Text>Distancia: {item.distancia} km</Text>
-            <Text>Fecha: {new Date(item.timestamp).toLocaleDateString("en-US")}</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.headerRow}>
+          <Text style={styles.h1}>Inicio</Text>
+          <View style={styles.avatar} />
+        </View>
+
+        <View style={styles.cardSmall}>
+          <View style={styles.statusRow}>
+            <View style={styles.wifiCircle}>
+              <Ionicons name="wifi" size={18} color="#111" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.caption}>Estado</Text>
+              <Text numberOfLines={1} style={[styles.status, { color: connected ? '#A6FF00' : '#FF5757' }]}>
+                {connected ? 'Conectado' : 'Desconectado'}
+              </Text>
+            </View>
+            <Text style={styles.link}>Conectar</Text>
           </View>
         </View>
 
-        <View
-          style={[styles.cardLarge, styles.chartCard]}
-          onLayout={(event) => setWidthPulse(Math.max(160, Math.floor(event.nativeEvent.layout.width - 24)))}
-        >
+        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthPulse(Math.max(160, Math.floor(e.nativeEvent.layout.width - 24)))}>
           <Text style={styles.cardTitle}>Pulso</Text>
           {last12.length > 1 ? (
-            <BarChart
-              data={{ labels, datasets: [{ data: pulsoValues }] }}
-              width={widthPulse}
-              height={160}
-              chartConfig={chartConfig}
-              withInnerLines={false}
-              fromZero
-              style={{ borderRadius: 16 }}
-            />
+            <BarChart data={{ labels, datasets: [{ data: pulsoValues }] }} width={widthPulse} height={160} chartConfig={chartConfig} withInnerLines={false} fromZero style={{ borderRadius: 16 }} />
           ) : (
             <Text style={styles.empty}>Sin datos recientes</Text>
           )}
         </View>
 
-        <View
-          style={[styles.cardLarge, styles.chartCard]}
-          onLayout={(event) => setWidthOxy(Math.max(160, Math.floor(event.nativeEvent.layout.width - 24)))}
-        >
+        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthOxy(Math.max(160, Math.floor(e.nativeEvent.layout.width - 24)))}>
           <Text style={styles.cardTitle}>Oxigeno</Text>
           {last12.length > 1 ? (
-            <LineChart
-              data={{ labels, datasets: [{ data: oxigenoValues }] }}
-              width={widthOxy}
-              height={160}
-              chartConfig={{
-                ...chartConfig,
-                color: (opacity = 1) => `rgba(255,255,255,${opacity})`,
-                fillShadowGradientFrom: '#FFFFFF',
-                fillShadowGradientTo: '#FFFFFF',
-              }}
-              withDots
-              bezier
-              withInnerLines={false}
-              fromZero
-              style={{ borderRadius: 16 }}
-            />
+            <LineChart data={{ labels, datasets: [{ data: oxigenoValues }] }} width={widthOxy} height={160} chartConfig={{ ...chartConfig, color: (o=1)=>`rgba(255,255,255,${o})`, fillShadowGradientFrom: '#FFFFFF', fillShadowGradientTo: '#FFFFFF' }} withDots bezier withInnerLines={false} fromZero style={{ borderRadius: 16 }} />
           ) : (
             <Text style={styles.empty}>Sin datos recientes</Text>
           )}
@@ -185,27 +153,12 @@ export default function Home() {
                 <Text style={styles.rowSub}>{new Date(toMillis(item.timestamp)).toLocaleString()}</Text>
               </View>
               <Text style={styles.rowRight}>{item.oxigeno}% O2</Text>
-              <Ionicons
-                name="trash"
-                size={18}
-                color="#FF6B6B"
-                onPress={() => {
-                  Alert.alert('Eliminar registro', 'Deseas eliminar este registro?', [
-                    { text: 'Cancelar', style: 'cancel' },
-                    {
-                      text: 'Eliminar',
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          const { remove } = await import('firebase/database');
-                          const { db: database } = await import('../../firebaseConfig');
-                          remove(ref(database as any, `lecturas/${item.id}`));
-                        } catch {}
-                      },
-                    },
-                  ]);
-                }}
-              />
+              <Ionicons name="trash" size={18} color="#FF6B6B" onPress={() => {
+                Alert.alert('Eliminar registro', 'Deseas eliminar este registro?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Eliminar', style: 'destructive', onPress: async () => { try { await remove(ref(db as any, `lecturas/${item.id}`)); } catch {} } },
+                ]);
+              }} />
             </View>
           );
         })}
