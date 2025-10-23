@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Dimensions, ScrollView, Animated, Alert } from 'react-native';
-import { BarChart, LineChart } from 'react-native-chart-kit';
-import { Ionicons } from '@expo/vector-icons';
-import { onValue, ref, query, orderByChild, limitToLast } from 'firebase/database';
+import { onValue, ref } from "firebase/database";
+import React, { useEffect, useState } from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { db } from "../../firebaseConfig";
 
-import { db } from '../../firebaseConfig';
-
+//  Tipos de datos
 type Lectura = {
   id: string;
   pulso: number;
@@ -86,25 +84,17 @@ export default function Home() {
   const [widthOxy, setWidthOxy] = useState(Dimensions.get('window').width - 64);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.headerRow}>
-          <Text style={styles.h1}>Inicio</Text>
-          <View style={styles.avatar} />
-        </View>
-
-        <View style={styles.cardSmall}>
-          <View style={styles.statusRow}>
-            <View style={styles.wifiCircle}>
-              <Ionicons name="wifi" size={18} color="#111" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.caption}>Estado</Text>
-              <Text numberOfLines={1} style={[styles.status, { color: connected ? '#A6FF00' : '#FF5757' }]}>
-                {connected ? 'Conectado' : 'Desconectado'}
-              </Text>
-            </View>
-            <Text style={styles.link}>Conectar</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Lecturas del ESP32</Text>
+      <FlatList
+        data={lecturas}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text>Pulso: {item.pulso}</Text>
+            <Text>Oxígeno: {item.oxigeno}%</Text>
+            <Text>Distancia: {item.distancia} km</Text>
+            <Text>Fecha: {new Date(item.timestamp).toLocaleDateString("en-US")}</Text>
           </View>
         </View>
 
