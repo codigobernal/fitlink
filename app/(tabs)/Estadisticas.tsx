@@ -3,7 +3,6 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect, Line as SvgLine, Circle as SvgCircle, Polyline, Text as SvgText } from 'react-native-svg';
 
 export default function Estadisticas() {
-  // Trayecto demo (normalizado 0..1) para visualizar A→B en horizontal
   const route = useMemo(
     () => [
       { x: 0.08, y: 0.80 },
@@ -26,7 +25,6 @@ export default function Estadisticas() {
           <View style={styles.avatar} />
         </View>
 
-        {/* Campo de fútbol horizontal (único) para trazar recorridos futuros */}
         <View style={[styles.card, { padding: 12 }]}> 
           <Text style={[styles.caption, { marginBottom: 8 }]}>Mapa de actividad</Text>
           <View style={styles.pitchWrap}>
@@ -34,10 +32,9 @@ export default function Estadisticas() {
           </View>
         </View>
 
-        {/* Card de grid de datos */}
         <View style={[styles.card, { padding: 12 }]}> 
           <Text style={[styles.caption, { marginBottom: 8 }]}>Lorem ipsum dolor sit <Text style={{ color: '#A6FF00' }}>AMET</Text></Text>
-          <View style={styles.grid}> 
+          <View style={styles.grid}>
             {Array.from({ length: 12 }).map((_, i) => (
               <View key={i} style={styles.gridItem}>
                 <Text style={styles.gridTop}>7:15</Text>
@@ -46,65 +43,51 @@ export default function Estadisticas() {
             ))}
           </View>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function SoccerField({ points = [] as { x: number; y: number }[] }) {
-  // Horizontal: viewBox 160x100
-  const W = 160;
-  const H = 100;
-  const toPoints = (ps: { x: number; y: number }[]) =>
-    ps.map((p) => `${(p.x * W).toFixed(2)},${(p.y * H).toFixed(2)}`).join(' ');
+type Point = { x: number; y: number };
 
-  const hasRoute = points && points.length > 1;
-  const start = hasRoute ? { X: points[0].x * W, Y: points[0].y * H } : null;
-  const end = hasRoute ? { X: points[points.length - 1].x * W, Y: points[points.length - 1].y * H } : null;
+function SoccerField({ points = [] as Point[] }) {
+  const WIDTH = 160;
+  const HEIGHT = 100;
+  const toPolyline = (items: Point[]) =>
+    items.map((p) => `${(p.x * WIDTH).toFixed(2)},${(p.y * HEIGHT).toFixed(2)}`).join(' ');
+
+  const hasRoute = points.length > 1;
+  const start = hasRoute ? { x: points[0].x * WIDTH, y: points[0].y * HEIGHT } : null;
+  const end = hasRoute ? { x: points[points.length - 1].x * WIDTH, y: points[points.length - 1].y * HEIGHT } : null;
 
   return (
-    <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
-      {/* Fondo */}
-      <Rect x="0" y="0" width={W} height={H} rx="12" fill="#89FF00" />
-      {/* Líneas del campo */}
-      <Rect x="3" y="3" width={W - 6} height={H - 6} rx="10" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
-      <SvgLine x1={W / 2} y1={3} x2={W / 2} y2={H - 3} stroke="#FFFFFF" strokeWidth="1.5" />
-      <SvgCircle cx={W / 2} cy={H / 2} r="9" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
-      {/* Áreas grandes izquierda/derecha */}
-      <Rect x="3" y={H / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
-      <Rect x={W - 27} y={H / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
-      {/* Áreas pequeñas */}
-      <Rect x="3" y={H / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
-      <Rect x={W - 15} y={H / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="transparent" />
+    <Svg width="100%" height="100%" viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+      <Rect x="0" y="0" width={WIDTH} height={HEIGHT} rx="12" fill="#89FF00" />
+      <Rect x="3" y="3" width={WIDTH - 6} height={HEIGHT - 6} rx="10" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <SvgLine x1={WIDTH / 2} y1={3} x2={WIDTH / 2} y2={HEIGHT - 3} stroke="#FFFFFF" strokeWidth="1.5" />
+      <SvgCircle cx={WIDTH / 2} cy={HEIGHT / 2} r="9" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={HEIGHT / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={WIDTH - 27} y={HEIGHT / 2 - 25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={HEIGHT / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={WIDTH - 15} y={HEIGHT / 2 - 15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
 
-      {/* Ruta A→B (si existe) */}
       {hasRoute && (
-        <Polyline points={toPoints(points)} stroke="#165B33" strokeOpacity="0.9" strokeWidth="2" fill="none" />
+        <Polyline points={toPolyline(points)} stroke="#165B33" strokeOpacity="0.9" strokeWidth="2" fill="none" />
       )}
-      {/* Marcadores A y B */}
-      {start && (
-        <SvgCircle cx={start.X} cy={start.Y} r="2.8" fill="#00C853" />
-      )}
-      {end && (
-        <SvgCircle cx={end.X} cy={end.Y} r="3.2" fill="#FF3B30" />
-      )}
-      {start && (
-        <SvgText x={start.X + 3} y={start.Y - 3} fill="#0B3D1E" fontSize="4" fontWeight="700">A</SvgText>
-      )}
-      {end && (
-        <SvgText x={end.X + 3} y={end.Y - 3} fill="#5B1212" fontSize="4" fontWeight="700">B</SvgText>
-      )}
+      {start && <SvgCircle cx={start.x} cy={start.y} r="3" fill="#00C853" />}
+      {end && <SvgCircle cx={end.x} cy={end.y} r="3.4" fill="#FF3B30" />}
+      {start && <SvgText x={start.x + 3} y={start.y - 3} fill="#0B3D1E" fontSize="4" fontWeight="700">A</SvgText>}
+      {end && <SvgText x={end.x + 3} y={end.y - 3} fill="#5B1212" fontSize="4" fontWeight="700">B</SvgText>}
     </Svg>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
-  scroll: { padding: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 12 },
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold' },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF' },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF' },
   caption: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 12 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 16 },
   pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
@@ -113,3 +96,4 @@ const styles = StyleSheet.create({
   gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
   gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
 });
+
