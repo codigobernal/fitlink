@@ -39,9 +39,9 @@ export default function Landing() {
     <SafeAreaView style={styles.safe}>
       <StatusBar style="light" />
       <View style={styles.container}>
-        {/* Runners (mock) */}
-        <Image source={{ uri: 'https://placehold.co/260x338' }} style={{ position: 'absolute', width: leftW, height: leftH, left: 12, top: 84 }} resizeMode="contain" />
-        <Image source={{ uri: 'https://placehold.co/220x264' }} style={{ position: 'absolute', width: rightW, height: rightH, right: -8, top: Math.max(180, height * 0.28) }} resizeMode="contain" />
+        {/* Runners (local assets via require) */}
+        <Image source={require('../../assets/images/Sprinter Female.png')} style={{ position: 'absolute', width: leftW, height: leftH, left: 12, top: 84 }} resizeMode="contain" />
+        <Image source={require('../../assets/images/Sprinter Male.png')} style={{ position: 'absolute', width: rightW, height: rightH, right: -8, top: Math.max(180, height * 0.28) }} resizeMode="contain" />
 
         {/* Contenido inferior */}
         <View

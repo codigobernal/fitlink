@@ -9,12 +9,12 @@ export default function AuthBackground({ children }: Props) {
   return (
     <View style={styles.container}>
       {/* Decorative images (shared across auth screens) */}
-      <Image source={{ uri: 'https://placehold.co/101x101' }} style={styles.decTopLeft} />
-      <Image source={{ uri: 'https://placehold.co/100x104' }} style={styles.decTopRight} />
-      <Image source={{ uri: 'https://placehold.co/108x103' }} style={styles.decMidLeft} />
-      <Image source={{ uri: 'https://placehold.co/94x94' }} style={styles.decBottomLeft} />
-      <Image source={{ uri: 'https://placehold.co/93x102' }} style={styles.decBottomRight} />
-      <Image source={{ uri: 'https://placehold.co/107x107' }} style={styles.decBottomCenter} />
+      <Image source={require('../../assets/images/Tech Blanket.png')} style={styles.decTopLeft} />
+      <Image source={require('../../assets/images/Classic Trainer.png')} style={styles.decTopRight} />
+      <Image source={require('../../assets/images/Gray Dumbbell.png')} style={styles.decMidLeft} />
+      <Image source={require('../../assets/images/Yellow Towel.png')} style={styles.decBottomLeft} />
+      <Image source={require('../../assets/images/Weighted Barbell.png')} style={styles.decBottomRight} />
+      <Image source={require('../../assets/images/Alarm Clock.png')} style={styles.decBottomCenter} />
       {children}
     </View>
   );
@@ -29,4 +29,3 @@ const styles = StyleSheet.create({
   decBottomRight: { position: 'absolute', right: 16, bottom: 110, width: 90, height: 98, transform: [{ rotate: '180deg' }] },
   decBottomCenter: { position: 'absolute', alignSelf: 'center', bottom: 40, width: 100, height: 100 },
 });
-
