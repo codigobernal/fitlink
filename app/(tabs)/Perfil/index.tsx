@@ -50,8 +50,8 @@ export default function Informacion() {
         <Option
           icon="log-out"
           label="Cerrar sesión"
-          background="#3B0F0F"
-          color="#FF6B6B"
+          background="#390f3bff"
+          color="#ff6bd5ff"
           onPress={() => {
             Alert.alert('Cerrar sesión', '¿Deseas cerrar sesión?', [
               { text: 'Cancelar', style: 'cancel' },
