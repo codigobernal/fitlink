@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Rect, Line as SvgLine, Circle as SvgCircle, Polyline, Text as SvgText } from 'react-native-svg';
 
 export default function Estadisticas() {
@@ -32,19 +33,54 @@ export default function Estadisticas() {
           </View>
         </View>
 
-        <View style={[styles.card, { padding: 12 }]}> 
-          <Text style={[styles.caption, { marginBottom: 8 }]}>Lorem ipsum dolor sit <Text style={{ color: '#A6FF00' }}>AMET</Text></Text>
-          <View style={styles.grid}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <View key={i} style={styles.gridItem}>
-                <Text style={styles.gridTop}>7:15</Text>
-                <Text style={styles.gridBottom}>Pulso</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        <DateSwitcher />
+        <StatItem color="#7F1D1D" title="Movimiento" value="-/- KCAL/DÍA" valueColor="#FF4D4D" />
+        <StatItem color="#1E3A8A" title="Distancia" value="-/- KM/DÍA" valueColor="#3BA4FF" />
+        <StatItem color="#5B21B6" title="Caminar" value="-/- /KM" valueColor="#C084FC" />
+        <StatItem color="#14532D" title="Correr" value="-/- /KM" valueColor="#22C55E" />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function formatDay(d: Date) {
+  const today = new Date();
+  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (d.toDateString() === base.toDateString()) return 'Hoy';
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayName = days[d.getDay()];
+  const dayNum = d.getDate();
+  const monthName = months[d.getMonth()];
+  return `${dayName} ${dayNum} de ${monthName}`;
+}
+
+function DateSwitcher() {
+  const [offset, setOffset] = useState(0); // 0..6
+  const now = new Date();
+  const show = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+  return (
+    <View style={styles.switcher}>
+      <Pressable disabled={offset >= 6} onPress={() => setOffset((n) => Math.min(6, n + 1))} style={({ pressed }) => [{ opacity: offset >= 6 ? 0.35 : pressed ? 0.7 : 1 }]}>
+        <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+      </Pressable>
+      <Text style={styles.switcherTitle}>{formatDay(show)}</Text>
+      <Pressable disabled={offset === 0} onPress={() => setOffset((n) => Math.max(0, n - 1))} style={({ pressed }) => [{ opacity: offset === 0 ? 0.35 : pressed ? 0.7 : 1 }]}>
+        <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+      </Pressable>
+    </View>
+  );
+}
+
+function StatItem({ color, title, value, valueColor }: { color: string; title: string; value: string; valueColor: string }) {
+  return (
+    <View style={[styles.card, styles.statRow]}> 
+      <View style={[styles.statDot, { backgroundColor: color }]} />
+      <View style={{ gap: 4 }}>
+        <Text style={styles.statTitle}>{title}</Text>
+        <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -91,8 +127,11 @@ const styles = StyleSheet.create({
   caption: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 12 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 16 },
   pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 14 },
-  gridItem: { width: '30%', alignItems: 'center' },
-  gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
-  gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
+  switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  switcherArrow: { color: 'white', fontSize: 18, paddingHorizontal: 8 },
+  switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
+  statRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  statDot: { width: 28, height: 28, borderRadius: 14 },
+  statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
+  statValue: { fontFamily: 'SFProRounded-Semibold' },
 });

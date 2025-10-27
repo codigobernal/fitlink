@@ -7,10 +7,10 @@ import { onValue, ref } from 'firebase/database';
 import { signOut } from 'firebase/auth';
 
 const OPTION_STYLES = {
-  change: { background: '#2F3136', color: '#FFD166' },
-  delete: { background: '#3B0F0F', color: '#FF6B6B' },
-  about: { background: '#2E3A2E', color: '#A6FF00' },
-  help: { background: '#273442', color: '#7AD7FF' },
+  change: { background: '#3d300eff', color: '#FFD166' },
+  delete: { background: '#3d0c0cff', color: '#FF6B6B' },
+  about: { background: '#093a09ff', color: '#A6FF00' },
+  help: { background: '#0c243eff', color: '#7AD7FF' },
 } as const;
 
 export default function Informacion() {
@@ -47,10 +47,11 @@ export default function Informacion() {
         <Option icon="trash" label="Borrar datos" background={OPTION_STYLES.delete.background} color={OPTION_STYLES.delete.color} onPress={() => router.push('/(tabs)/Perfil/delete-data')} />
         <Option icon="information-circle" label="Acerca de nosotros" background={OPTION_STYLES.about.background} color={OPTION_STYLES.about.color} onPress={() => router.push('/(tabs)/Perfil/about')} />
         <Option icon="help-circle" label="Ayuda" background={OPTION_STYLES.help.background} color={OPTION_STYLES.help.color} onPress={() => router.push('/(tabs)/Perfil/help')} />
+        <Option icon="document-text" label="Aviso de privacidad" background="rgba(58, 68, 13, 1)" color="#fff700ff" onPress={() => router.push('/(tabs)/Perfil/privacy')} />
         <Option
           icon="log-out"
           label="Cerrar sesión"
-          background="#390f3bff"
+          background="#3a0b3cff"
           color="#ff6bd5ff"
           onPress={() => {
             Alert.alert('Cerrar sesión', '¿Deseas cerrar sesión?', [
