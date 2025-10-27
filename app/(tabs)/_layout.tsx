@@ -1,71 +1,35 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
-
-const INACTIVE_CIRCLE = '#3A3A3C';
-const ACTIVE_CIRCLE = '#A6FF00';
-
-function circleIcon(icon: keyof typeof Ionicons.glyphMap) {
-  return ({ focused }: { focused: boolean }) => (
-      <View
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name={icon} size={17} color={focused ? '#111' : '#CFCFCF'} />
-      </View>
-    );
-}
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: ACTIVE_CIRCLE,
-        tabBarInactiveTintColor: '#8C8C8C',
-        tabBarStyle: {
-          backgroundColor: '#2A2A2C',
-          borderTopColor: '#2A2A2C',
-          height: 68,
-          paddingBottom: 6,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: { fontSize: 13, fontFamily: 'SFProRounded-Semibold' },
+        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}
-    >
+      }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
-          tabBarIcon: circleIcon('home'),
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="Estadisticas"
+        name="explore"
         options={{
-          title: 'Estadisticas',
-          tabBarIcon: circleIcon('stats-chart'),
+          title: 'Explore',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="Perfil"
-        options={{
-          title: 'Informacion',
-          tabBarIcon: circleIcon('information'),
-        }}
-      />
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="index copy" options={{ href: null }} />
     </Tabs>
   );
 }

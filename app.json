@@ -9,11 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Necesitamos acceder a tu galería para elegir tu foto de perfil.",
-        "NSCameraUsageDescription": "Necesitamos usar la cámara para tomar tu foto de perfil."
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -32,7 +28,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image-picker",
       [
         "expo-splash-screen",
         {
