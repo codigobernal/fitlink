@@ -1,35 +1,71 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+
+const INACTIVE_CIRCLE = '#3A3A3C';
+const ACTIVE_CIRCLE = '#A6FF00';
+
+function circleIcon(icon: keyof typeof Ionicons.glyphMap) {
+  return ({ focused }: { focused: boolean }) => (
+      <View
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name={icon} size={17} color={focused ? '#111' : '#CFCFCF'} />
+      </View>
+    );
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: ACTIVE_CIRCLE,
+        tabBarInactiveTintColor: '#8C8C8C',
+        tabBarStyle: {
+          backgroundColor: '#2A2A2C',
+          borderTopColor: '#2A2A2C',
+          height: 68,
+          paddingBottom: 6,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: { fontSize: 13, fontFamily: 'SFProRounded-Semibold' },
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Inicio',
+          tabBarIcon: circleIcon('home'),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="Estadisticas"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Estadisticas',
+          tabBarIcon: circleIcon('stats-chart'),
         }}
       />
+      <Tabs.Screen
+        name="Perfil"
+        options={{
+          title: 'Informacion',
+          tabBarIcon: circleIcon('information'),
+        }}
+      />
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      <Tabs.Screen name="index copy" options={{ href: null }} />
     </Tabs>
   );
 }
