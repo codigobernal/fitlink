@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Dimensions, ScrollView, Animated, Alert } from 'react-native';
-import { BarChart, LineChart } from 'react-native-chart-kit';
+import React, { useEffect, useMemo, useState } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { onValue, ref, query, orderByChild, limitToLast, remove } from 'firebase/database';
+import Svg, { Rect, Line as SvgLine, Circle as SvgCircle, Polyline, Text as SvgText } from 'react-native-svg';
+import { onValue, ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { db } from '../../firebaseConfig';
 
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
@@ -17,9 +17,11 @@ function toMillis(ts: any) {
 
 export default function Home() {
   const [lecturas, setLecturas] = useState<Lectura[]>([]);
+  const [dayOffset, setDayOffset] = useState(0); // 0..6
 
   useEffect(() => {
-    const q = query(ref(db, 'lecturas'), orderByChild('timestamp'), limitToLast(5));
+    // Cargamos más registros para poder cubrir hasta 7 días
+    const q = query(ref(db, 'lecturas'), orderByChild('timestamp'), limitToLast(500));
     const unsub = onValue(q, (snap) => {
       const data = snap.val();
       if (!data) return setLecturas([]);
@@ -34,43 +36,69 @@ export default function Home() {
   const lastMs = latest ? toMillis(latest.timestamp) : 0;
   const connected = lastMs > 0 && Date.now() - lastMs < 2 * 60 * 1000;
 
-  const last12 = useMemo(() => lecturas.slice(0, 12).reverse(), [lecturas]);
-  const labels = last12.map((item, idx) => (idx % 3 === 0 ? new Date(toMillis(item.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''));
-  const pulsoValues = last12.map((i) => i.pulso ?? 0);
-  const oxigenoValues = last12.map((i) => i.oxigeno ?? 0);
+  // ==== Dinámica por día (Movimiento/Distancia/Caminar/Correr) ====
+  function startOfDay(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function endOfDay(d: Date) { const s = startOfDay(d); return new Date(s.getTime() + 24*60*60*1000 - 1); }
+  const selectedDate = addDays(new Date(), -dayOffset);
+  const dayStart = startOfDay(selectedDate).getTime();
+  const dayEnd = endOfDay(selectedDate).getTime();
+  const lecturasDiaAsc = useMemo(() => {
+    const sameDay = lecturas.filter(l => {
+      const ms = toMillis(l.timestamp);
+      return ms >= dayStart && ms <= dayEnd;
+    });
+    // Orden ascendente por tiempo
+    return sameDay.sort((a,b) => toMillis(a.timestamp) - toMillis(b.timestamp));
+  }, [lecturas, dayStart, dayEnd]);
 
-  const chartConfig = {
-    backgroundGradientFrom: '#111',
-    backgroundGradientTo: '#111',
-    color: (opacity = 1) => `rgba(166, 255, 0, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(255,255,255,${opacity})`,
-    barPercentage: 0.6,
-    fillShadowGradientFrom: '#A6FF00',
-    fillShadowGradientTo: '#A6FF00',
-    decimalPlaces: 0,
-    propsForLabels: { fontFamily: 'SFProRounded-Regular', fontSize: 10 },
-  } as const;
+  function inferDistanceKm(reads: Lectura[]) {
+    if (reads.length === 0) return { total: 0, deltas: [] as number[], cumulative: false };
+    // Detectar si distancia parece acumulada
+    let nonDecreasing = 0;
+    for (let i = 1; i < reads.length; i++) {
+      if ((reads[i].distancia ?? 0) >= (reads[i-1].distancia ?? 0)) nonDecreasing++;
+    }
+    const ratio = reads.length > 1 ? nonDecreasing / (reads.length - 1) : 0;
+    const cumulative = ratio >= 0.6; // umbral heurístico
+    if (cumulative) {
+      const deltas: number[] = [];
+      let sum = 0;
+      for (let i = 1; i < reads.length; i++) {
+        const prev = reads[i-1].distancia ?? 0;
+        const cur = reads[i].distancia ?? 0;
+        const d = Math.max(0, cur - prev);
+        deltas.push(d);
+        sum += d;
+      }
+      return { total: sum, deltas, cumulative: true };
+    } else {
+      // Si no es acumulada: sumatoria simple (asumiendo muestras parciales)
+      const values = reads.map(r => r.distancia ?? 0);
+      const sum = values.reduce((a,b)=>a+b, 0);
+      // repartir en deltas por muestra (uniforme)
+      const avg = reads.length ? sum / reads.length : 0;
+      const deltas = reads.map(()=>avg);
+      return { total: sum, deltas, cumulative: false };
+    }
+  }
 
-  const bpm = latest?.pulso ?? 60;
-  const bpmGood = bpm >= 60 && bpm <= 100;
-  const heartScale = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const clamped = Math.max(40, Math.min(160, bpm || 60));
-    const beat = Math.round(60000 / clamped / 2);
-    const amplitude = bpmGood ? 0.25 : 0.08;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(heartScale, { toValue: 1 + amplitude, duration: beat, useNativeDriver: true }),
-        Animated.timing(heartScale, { toValue: 1, duration: beat, useNativeDriver: true }),
-      ]),
-      { resetBeforeIteration: true }
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [bpm, bpmGood]);
+  const { total: kmDia, deltas: distDeltas } = inferDistanceKm(lecturasDiaAsc);
+  const bpmThreshold = 100; // umbral simple para caminar vs correr
+  let distWalk = 0, distRun = 0;
+  for (let i = 0; i < lecturasDiaAsc.length; i++) {
+    const d = distDeltas[i] ?? 0;
+    const bpmVal = lecturasDiaAsc[i]?.pulso ?? 0;
+    if (bpmVal > bpmThreshold) distRun += d; else distWalk += d;
+  }
+  // kcal estimadas por km (placeholder)
+  const kcalDia = kmDia * 65;
 
-  const [widthPulse, setWidthPulse] = useState(Dimensions.get('window').width - 64);
-  const [widthOxy, setWidthOxy] = useState(Dimensions.get('window').width - 64);
+  const statItems = [
+    { c:'#7F1D1D', t:'Movimiento', v: kmDia ? `${Math.round(kcalDia)} KCAL/DÍA` : '--', vc:'#FF4D4D' },
+    { c:'#1E3A8A', t:'Distancia', v: kmDia ? `${kmDia.toFixed(2)} KM/DÍA` : '--', vc:'#3BA4FF' },
+    { c:'#5B21B6', t:'Caminar', v: distWalk ? `${distWalk.toFixed(2)} KM` : '--', vc:'#C084FC' },
+    { c:'#14532D', t:'Correr', v: distRun ? `${distRun.toFixed(2)} KM` : '--', vc:'#22C55E' },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -95,73 +123,54 @@ export default function Home() {
           </View>
         </View>
 
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthPulse(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
-          <Text style={styles.cardTitle}>Pulso</Text>
-          {last12.length > 1 ? (
-            <BarChart data={{ labels, datasets: [{ data: pulsoValues }] }} width={widthPulse} height={160} chartConfig={chartConfig} withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} />
-          ) : (
-            <Text style={styles.empty}>Sin datos recientes</Text>
-          )}
-        </View>
-
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthOxy(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
-          <Text style={styles.cardTitle}>Oxigeno</Text>
-          {last12.length > 1 ? (
-            <LineChart data={{ labels, datasets: [{ data: oxigenoValues }] }} width={widthOxy} height={160} chartConfig={{ ...chartConfig, color: (o=1)=>`rgba(255,255,255,${o})`, fillShadowGradientFrom: '#FFFFFF', fillShadowGradientTo: '#FFFFFF' }} withDots bezier withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} />
-          ) : (
-            <Text style={styles.empty}>Sin datos recientes</Text>
-          )}
-        </View>
-
-        <View style={[styles.cardLarge, styles.heartCard]}>
-          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-            <Ionicons name="heart" size={96} color={bpmGood ? '#FF2D55' : '#9E1C1C'} />
-          </Animated.View>
-          <Text style={[styles.caption, { marginTop: 6 }]}>Bla bla bla</Text>
-          <Text style={[styles.bpmText, { color: bpmGood ? '#A6FF00' : 'white' }]}>
-            {bpm || '--'} <Text style={{ color: '#FF5757' }}>BPM</Text>
-          </Text>
-        </View>
-
         <View style={styles.cardLarge}>
-          <Text style={styles.cardTitle}>Ultima lectura</Text>
+          <Text style={styles.cardTitle}>Lectura reciente</Text>
           {latest ? (
-            <View style={{ gap: 6 }}>
-              <Text style={styles.row}>Pulso: {latest.pulso}</Text>
-              <Text style={styles.row}>Oxigeno: {latest.oxigeno}%</Text>
-              <Text style={styles.row}>Distancia: {latest.distancia} km</Text>
-              <Text style={styles.row}>Fecha: {new Date(lastMs).toLocaleString()}</Text>
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1, backgroundColor: '#111214', borderRadius: 12, padding: 12 }}>
+                  <Text style={[styles.caption, { marginBottom: 4 }]}>Pulso</Text>
+                  <Text style={[styles.rowStrong, { color: '#A6FF00' }]}>{latest.pulso} <Text style={{ color: '#FF5757', fontFamily: 'SFProRounded-Semibold' }}>BPM</Text></Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: '#111214', borderRadius: 12, padding: 12 }}>
+                  <Text style={[styles.caption, { marginBottom: 4 }]}>Oxígeno</Text>
+                  <Text style={styles.rowStrong}>{latest.oxigeno}%</Text>
+                </View>
+              </View>
+              <View style={{ backgroundColor: '#111214', borderRadius: 12, padding: 12 }}>
+                <Text style={[styles.caption, { marginBottom: 2 }]}>Distancia</Text>
+                <Text style={styles.rowStrong}>{latest.distancia} km</Text>
+                <Text style={[styles.rowSub, { marginTop: 6 }]}>Fecha: {new Date(lastMs).toLocaleString()}</Text>
+              </View>
             </View>
           ) : (
             <Text style={styles.empty}>Aun no hay lecturas</Text>
           )}
         </View>
 
-        <Text style={styles.section}>Historial</Text>
-        {lecturas.map((item, index) => {
-          const colors = ['#A6FF00', '#FFD166', '#00D1FF', '#FF7F50', '#C084FC'];
-          const icons: (keyof typeof Ionicons.glyphMap)[] = ['bicycle', 'walk', 'flame', 'pulse', 'stopwatch'];
-          const color = colors[index % colors.length];
-          const icon = icons[index % icons.length];
-          return (
-            <View key={item.id} style={styles.rowCard}>
-              <View style={[styles.dot, { backgroundColor: color, alignItems: 'center', justifyContent: 'center' }]}> 
-                <Ionicons name={icon} size={12} color="#111" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowStrong}>{item.pulso} BPM</Text>
-                <Text style={styles.rowSub}>{new Date(toMillis(item.timestamp)).toLocaleString()}</Text>
-              </View>
-              <Text style={styles.rowRight}>{item.oxigeno}% O2</Text>
-              <Ionicons name="trash" size={18} color="#FF6B6B" onPress={() => {
-                Alert.alert('Eliminar registro', 'Deseas eliminar este registro?', [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { text: 'Eliminar', style: 'destructive', onPress: async () => { try { await remove(ref(db as any, `lecturas/${item.id}`)); } catch {} } },
-                ]);
-              }} />
+        {/* Actividad + fecha + tarjetas */}
+        <View style={[styles.cardLarge, { padding: 12 }]}> 
+          <Text style={styles.cardTitle}>Mapa de actividad</Text>
+          <View style={styles.pitchWrap}>
+            <SoccerField points={[{x:0.08,y:0.8},{x:0.16,y:0.7},{x:0.28,y:0.62},{x:0.4,y:0.55},{x:0.54,y:0.5},{x:0.68,y:0.46},{x:0.82,y:0.4},{x:0.92,y:0.35}]} />
+          </View>
+        </View>
+
+        <View style={styles.switcher}>
+          <Ionicons name="chevron-back" size={20} color="#FFFFFF" onPress={() => setDayOffset(n => Math.min(6, n+1))} />
+          <Text style={styles.switcherTitle}>{formatDay(addDays(new Date(), -dayOffset))}</Text>
+          <Ionicons name="chevron-forward" size={20} color="#FFFFFF" onPress={() => setDayOffset(n => Math.max(0, n-1))} />
+        </View>
+
+        {statItems.map((s, i) => (
+          <View key={i} style={[styles.cardLarge, { flexDirection:'row', alignItems:'center', gap:12, padding:12 }]}> 
+            <View style={{ width:28, height:28, borderRadius:14, backgroundColor: s.c }} />
+            <View style={{ gap:4 }}>
+              <Text style={styles.statTitle}>{s.t}</Text>
+              <Text style={[styles.statValue, { color: s.vc }]}>{s.v}</Text>
             </View>
-          );
-        })}
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -192,4 +201,42 @@ const styles = StyleSheet.create({
   rowStrong: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
   rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
   rowRight: { color: 'white', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
+  statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
+  statValue: { fontFamily: 'SFProRounded-Semibold' },
+  pitchWrap: { aspectRatio: 16/10, borderRadius: 16, overflow: 'hidden' },
+  switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
 });
+
+// Helpers fecha + campo
+function addDays(d: Date, days: number) { const x = new Date(d); x.setDate(x.getDate() + days); return x; }
+function formatDay(d: Date) {
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
+}
+
+type P = { x:number;y:number };
+function SoccerField({ points = [] as P[] }) {
+  const W = 160; const H = 100;
+  const toPolyline = (items:P[]) => items.map(p=>`${(p.x*W).toFixed(2)},${(p.y*H).toFixed(2)}`).join(' ');
+  const has = points.length>1; const s = has ? {x:points[0].x*W,y:points[0].y*H}:null; const e = has ? {x:points[points.length-1].x*W,y:points[points.length-1].y*H}:null;
+  return (
+    <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
+      <Rect x="0" y="0" width={W} height={H} rx="12" fill="#89FF00" />
+      <Rect x="3" y="3" width={W-6} height={H-6} rx="10" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <SvgLine x1={W/2} y1={3} x2={W/2} y2={H-3} stroke="#FFFFFF" strokeWidth="1.5" />
+      <SvgCircle cx={W/2} cy={H/2} r="9" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={H/2-25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={W-27} y={H/2-25} width="24" height="50" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x="3" y={H/2-15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      <Rect x={W-15} y={H/2-15} width="12" height="30" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+      {has && (<Polyline points={toPolyline(points)} stroke="#165B33" strokeOpacity="0.9" strokeWidth="2" fill="none" />)}
+      {s && (<SvgCircle cx={s.x} cy={s.y} r="3" fill="#00C853" />)}
+      {e && (<SvgCircle cx={e.x} cy={e.y} r="3.4" fill="#FF3B30" />)}
+      {s && (<SvgText x={s.x + 3} y={s.y - 3} fill="#0B3D1E" fontSize="4" fontWeight="700">A</SvgText>)}
+      {e && (<SvgText x={e.x + 3} y={e.y - 3} fill="#5B1212" fontSize="4" fontWeight="700">B</SvgText>)}
+    </Svg>
+  );
+}
+
