@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { db } from "../../firebaseConfig";
 
-//  Tipos de datos
 type Lectura = {
   id: string;
   pulso: number;

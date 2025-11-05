@@ -1,9 +1,9 @@
-import { Stack, useNavigation, usePathname } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { Stack, useNavigation, usePathname } from "expo-router";
+import { useEffect, useMemo } from "react";
 
 const TAB_STYLE = {
-  backgroundColor: '#2A2A2C',
-  borderTopColor: '#2A2A2C',
+  backgroundColor: "#2A2A2C",
+  borderTopColor: "#2A2A2C",
   height: 64,
   paddingBottom: 6,
   paddingTop: 6,
@@ -15,7 +15,9 @@ export default function PerfilLayout() {
   const isRoot = useMemo(() => /\/(tabs)\/Perfil\/?$/.test(pathname), [pathname]);
 
   useEffect(() => {
-    navigation.getParent()?.setOptions({ tabBarStyle: isRoot ? TAB_STYLE : { display: 'none' } });
+    navigation.getParent()?.setOptions({
+      tabBarStyle: isRoot ? TAB_STYLE : { display: "none" },
+    });
     return () => navigation.getParent()?.setOptions({ tabBarStyle: TAB_STYLE });
   }, [isRoot, navigation]);
 

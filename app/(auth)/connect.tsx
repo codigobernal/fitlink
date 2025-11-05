@@ -41,7 +41,7 @@ export default function Connect() {
           </View>
 
           {/* CTA */}
-          <Pressable disabled={!connected} onPress={() => router.replace('(tabs)')} style={({ pressed }) => [{ backgroundColor: '#A6FF00', height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 14, opacity: !connected ? 0.4 : pressed ? 0.9 : 1 }]}>
+          <Pressable disabled={!connected} onPress={() => router.replace('/(tabs)')} style={({ pressed }) => [{ backgroundColor: '#A6FF00', height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 14, opacity: !connected ? 0.4 : pressed ? 0.9 : 1 }]}>
             <Text style={{ color: 'black', fontFamily: 'SFProRounded-Semibold', fontSize: 18 * scale }}>Continuar</Text>
           </Pressable>
         </ScrollView>

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,20 +7,49 @@ import { router } from 'expo-router';
 import { auth, db } from '../../../firebaseConfig';
 import { onValue, ref } from 'firebase/database';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+=======
+import { useAuth } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { signOut } from 'firebase/auth';
+import { onValue, ref } from 'firebase/database';
+import React, { useEffect, useState } from 'react';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { auth, db } from '../../../firebaseConfig';
+import { Modal } from '../modal';
+>>>>>>> Stashed changes
 
+
+ 
 const OPTION_STYLES = {
   change: { background: '#3d300eff', color: '#FFD166' },
   delete: { background: '#3d0c0cff', color: '#FF6B6B' },
   about: { background: '#093a09ff', color: '#A6FF00' },
   help: { background: '#0c243eff', color: '#7AD7FF' },
 } as const;
-
+ 
 export default function Informacion() {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState<string | null>(auth.currentUser?.displayName ?? null);
   const [email, setEmail] = useState<string | null>(auth.currentUser?.email ?? null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const { user, setUser } = useAuth();
+  const handleCloseSession = async () => {
+  try {
+    await signOut(auth);
+    setUser(null);
+    router.replace('/(auth)/login');
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    Alert.alert('Error', 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
+  } finally {
+    setModalVisible(false);
+  }
+};
 
+ 
   useEffect(() => {
+<<<<<<< Updated upstream
     // Escucha auth para refrescar nombre/email
     const offAuth = onAuthStateChanged(auth, (u) => {
       setName(u?.displayName ?? null);
@@ -34,22 +64,71 @@ export default function Informacion() {
       return off;
     });
     return () => offAuth();
-  }, []);
+=======
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const userRef = ref(db, `users/${uid}`);
+    const unsubscribe = onValue(userRef, (snap) => {
+      const data = snap.val();
+      if (data?.username) setName(String(data.username));
+      if (data?.email) setEmail(String(data.email));
+    });
+ 
+    return () => unsubscribe();
 
+>>>>>>> Stashed changes
+  }, []);
+ 
   return (
+<<<<<<< Updated upstream
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <Text style={styles.h1}>Informacion</Text>
+=======
+<SafeAreaView style={styles.safe}>
+<ScrollView contentContainerStyle={styles.scroll}>
+<Text style={styles.h1}>
+<Text style={styles.boldText}>Información</Text>
+</Text>
+ 
+        <Pressable
+          onPress={() => router.push('/(tabs)/Perfil/edit')}
+          style={({ pressed }) => [styles.card, styles.row, { opacity: pressed ? 0.92 : 1 }]}
+>
+<View style={styles.avatar} />
+<View style={{ flex: 1 }}>
+<Text style={styles.name}>{name || '<usuario aquí>'}</Text>
+<Text style={styles.email}>{email || '<correo aquí>'}</Text>
+</View>
+<Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+</Pressable>
+ 
+        <Option
+          icon="key"
+          label="Modificar contraseña"
+          background={OPTION_STYLES.change.background}
+          color={OPTION_STYLES.change.color}
+          onPress={() => router.push('/(tabs)/Perfil/change-password')}
+        />
+        <Option
+          icon="trash"
+          label="Borrar datos"
+          background={OPTION_STYLES.delete.background}
+          color={OPTION_STYLES.delete.color}
+           onPress={() => router.push('/(tabs)/Perfil/delete-data')}
+        />
+        <Option
+>>>>>>> Stashed changes
 
-        <Pressable onPress={() => router.push('/(tabs)/Perfil/edit')} style={({ pressed }) => [styles.card, styles.row, { opacity: pressed ? 0.92 : 1 }]}> 
-          <View style={styles.avatar} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{name || '<usuario aqui>'}</Text>
-            <Text style={styles.email}>{email || '<correo aqui>'}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-        </Pressable>
+          icon="information-circle"
+          label="Acerca de nosotros"
+          background={OPTION_STYLES.about.background}
+          color={OPTION_STYLES.about.color}
+          onPress={() => router.push('/(tabs)/Perfil/about')}
+        />
+        <Option
 
+<<<<<<< Updated upstream
         <Option icon="key" label="Modificar contrasena" background={OPTION_STYLES.change.background} color={OPTION_STYLES.change.color} onPress={() => router.push('/(tabs)/Perfil/change-password')} />
         <Option icon="trash" label="Borrar datos" background={OPTION_STYLES.delete.background} color={OPTION_STYLES.delete.color} onPress={() => router.push('/(tabs)/Perfil/delete-data')} />
         <Option icon="information-circle" label="Acerca de nosotros" background={OPTION_STYLES.about.background} color={OPTION_STYLES.about.color} onPress={() => router.push('/(tabs)/Perfil/about')} />
@@ -66,28 +145,69 @@ export default function Informacion() {
               { text: 'Cerrar sesión', style: 'destructive', onPress: async () => { try { await signOut(auth); router.replace('/(auth)/login'); } catch {} } },
             ]);
           }}
+=======
+          icon="help-circle"
+          label="Ayuda"
+          background={OPTION_STYLES.help.background}
+          color={OPTION_STYLES.help.color}
+          onPress={() => router.push('/(tabs)/Perfil/help')}
+         />
+        <Option
+          icon="log-out"
+          label="Cerrar sesión"
+          background="#390f3b"
+          color="#ff6bd5"
+          onPress={() => setModalVisible(true)}
+>>>>>>> Stashed changes
         />
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+</ScrollView>
+ 
+      {/* Modal para confirmar cierre de sesión */}
+  <Modal isOpen={isModalVisible} withInput={false} onRequestClose={() => setModalVisible(false)}>
+      <View style={styles.modalContent}>
+      <Text style={styles.modalText}>¿Deseas cerrar sesión?</Text>
+      <View style={styles.modalActions}>
+      <Pressable style={[styles.modalButton, styles.modalCancelButton]} onPress={() => setModalVisible(false)}>
+      <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+      </Pressable>
+      <Pressable style={[styles.modalButton, styles.modalConfirmButton]} onPress={handleCloseSession}>
+      <Text style={styles.modalConfirmButtonText}>Confirmar</Text>
+      </Pressable>
+      </View>
+      </View>
+      </Modal>
+      </SafeAreaView>
 
-type OptionProps = { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void; background: string; color: string };
+    );
 
+  }
+ 
+type OptionProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress?: () => void;
+  background: string;
+  color: string;
+
+};
+ 
 function Option({ icon, label, onPress, background, color }: OptionProps) {
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, styles.row, { opacity: pressed ? 0.85 : 1 }]}>
-      <View style={[styles.optIcon, { backgroundColor: background }]}> 
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      <Text style={styles.optionLabel}>{label}</Text>
-      <View style={{ flex: 1 }} />
-      <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+    <View style={[styles.optIcon, { backgroundColor: background }]}>
+    <Ionicons name={icon} size={18} color={color} />
+    </View>
+    <Text style={styles.optionLabel}>{label}</Text>
+    <View style={{ flex: 1 }} />
+    <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
     </Pressable>
-  );
-}
+    );
 
+}
+ 
 const styles = StyleSheet.create({
+
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
   h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 16 },
@@ -98,4 +218,20 @@ const styles = StyleSheet.create({
   email: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular', fontSize: 13 },
   optIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   optionLabel: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 17 },
+  boldText: { fontWeight: 'bold' },
+  modalContent: {
+    backgroundColor: '#1e1e1e',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+
+  },
+  modalText: { color: 'white', fontSize: 16, marginBottom: 20, fontWeight: 'bold' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  modalButton: { paddingHorizontal: 25, paddingVertical: 10, borderRadius: 10 },
+  modalConfirmButton: { backgroundColor: '#6d1872ff' },
+  modalCancelButton: { backgroundColor: '#444' },
+  modalConfirmButtonText: { color: '#fff', fontWeight: 'bold' },
+  modalCancelButtonText: { color: '#fff', fontWeight: 'bold' },
+
 });

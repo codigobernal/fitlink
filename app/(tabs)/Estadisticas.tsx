@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Animated, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +10,11 @@ import { Dimensions } from 'react-native';
 
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
 function toMillis(ts: any) { if (typeof ts === 'number') return ts > 1e12 ? ts : ts * 1000; const n = Number(ts); if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000; const d = new Date(ts); return Number.isNaN(d.getTime()) ? 0 : d.getTime(); }
+=======
+import React, { useMemo } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
+>>>>>>> Stashed changes
 
 export default function Estadisticas() {
   const insets = useSafeAreaInsets();
@@ -62,7 +68,7 @@ export default function Estadisticas() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.h1}>Estadisticas</Text>
+          <Text style={styles.h1}><Text style={styles.boldText}>Estadísticas</Text></Text>
           <View style={styles.avatar} />
         </View>
 
@@ -232,6 +238,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold', marginBottom: 8 },
   empty: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular' },
   pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
+<<<<<<< Updated upstream
   switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   switcherArrow: { color: 'white', fontSize: 18, paddingHorizontal: 8 },
   switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
@@ -244,4 +251,12 @@ const styles = StyleSheet.create({
   statDot: { width: 28, height: 28, borderRadius: 14 },
   statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   statValue: { fontFamily: 'SFProRounded-Semibold' },
+=======
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 14 },
+  gridItem: { width: '30%', alignItems: 'center' },
+  gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
+  gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },boldText: {
+    fontWeight: 'bold',
+  },
+>>>>>>> Stashed changes
 });

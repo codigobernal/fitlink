@@ -1,8 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+<<<<<<< Updated upstream
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+=======
+>>>>>>> Stashed changes
 
 import { HapticTab } from '@/components/haptic-tab';
 
@@ -10,20 +14,24 @@ const INACTIVE_CIRCLE = '#3A3A3C';
 const ACTIVE_CIRCLE = '#A6FF00';
 
 function circleIcon(icon: keyof typeof Ionicons.glyphMap) {
-  return ({ focused }: { focused: boolean }) => (
-      <View
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name={icon} size={17} color={focused ? '#111' : '#CFCFCF'} />
-      </View>
-    );
+  const Component = ({ focused }: { focused: boolean }) => (
+    <View
+      style={{
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: focused ? ACTIVE_CIRCLE : INACTIVE_CIRCLE,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Ionicons name={icon} size={17} color={focused ? '#111' : '#CFCFCF'} />
+    </View>
+  );
+
+  Component.displayName = `CircleIcon(${icon})`;
+
+  return Component;
 }
 
 export default function TabLayout() {
@@ -47,29 +55,12 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Inicio',
-          tabBarIcon: circleIcon('home'),
-        }}
-      />
-      <Tabs.Screen
-        name="Estadisticas"
-        options={{
-          title: 'Estadisticas',
-          tabBarIcon: circleIcon('stats-chart'),
-        }}
-      />
-      <Tabs.Screen
-        name="Perfil"
-        options={{
-          title: 'Informacion',
-          tabBarIcon: circleIcon('information'),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: 'Inicio', tabBarIcon: circleIcon('home') }} />
+      <Tabs.Screen name="Estadisticas" options={{ title: 'Estadisticas', tabBarIcon: circleIcon('stats-chart') }} />
+      <Tabs.Screen name="Perfil" options={{ title: 'Informacion', tabBarIcon: circleIcon('information') }} />
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="index copy" options={{ href: null }} />
     </Tabs>
   );
 }
+
