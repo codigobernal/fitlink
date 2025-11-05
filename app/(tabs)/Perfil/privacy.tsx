@@ -1,7 +1,9 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { fonts } from '../../../constants/fonts';
 
 export default function Privacy() {
   return (
@@ -100,8 +102,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
+  h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18 },
-  body: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 13, lineHeight: 19 },
+  body: { color: 'white', fontFamily: fonts.regular, fontSize: 13, lineHeight: 19 },
 });
+
 

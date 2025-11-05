@@ -1,6 +1,8 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel"],
+    // Minimal, compatible with Expo SDK 54 + expo-router
+    presets: ["babel-preset-expo"],
+    plugins: ["expo-router/babel"],
   };
 };

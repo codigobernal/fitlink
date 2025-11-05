@@ -1,15 +1,9 @@
 // app/(auth)/index.tsx
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Image,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, Image, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { fonts } from "../../constants/fonts";
 
 export default function Landing() {
   const { width, height } = useWindowDimensions();
@@ -83,7 +77,7 @@ export default function Landing() {
                 styles.brand,
                 {
                   fontSize: brandSize,
-                  fontFamily: "SFProRounded-Semibold",
+                  fontFamily: fonts.semibold,
                 },
               ]}
             >
@@ -96,7 +90,7 @@ export default function Landing() {
                 {
                   fontSize: subtitleSize,
                   lineHeight,
-                  fontFamily: "SFProRounded-Semibold",
+                  fontFamily: fonts.semibold,
                 },
               ]}
               numberOfLines={3}
@@ -106,7 +100,7 @@ export default function Landing() {
             </Text>
 
             <Pressable
-              onPress={() => router.push("/login")}
+              onPress={() => router.push("/(auth)/login")}
               style={({ pressed }) => [
                 styles.primaryBtn,
                 {
@@ -119,7 +113,7 @@ export default function Landing() {
               <Text
                 style={[
                   styles.primaryText,
-                  { fontSize: 16 * scale, fontFamily: "SFProRounded-Semibold" },
+                  { fontSize: 16 * scale, fontFamily: fonts.semibold },
                 ]}
               >
                 Iniciar Sesión
@@ -127,7 +121,7 @@ export default function Landing() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push("/register")}
+              onPress={() => router.push("/(auth)/register")}
               style={({ pressed }) => [
                 styles.ghostBtn,
                 {
@@ -141,7 +135,7 @@ export default function Landing() {
               <Text
                 style={[
                   styles.ghostText,
-                  { fontSize: 16 * scale, fontFamily: "SFProRounded-Semibold" },
+                  { fontSize: 16 * scale, fontFamily: fonts.semibold },
                 ]}
               >
                 Registrarse

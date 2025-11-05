@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AuthBackground from '@/components/auth/AuthBackground';
+import { fonts } from '../../constants/fonts';
 
 export default function Connect() {
   const scale = 1;
@@ -16,13 +18,13 @@ export default function Connect() {
         <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 24, flexGrow: 1, justifyContent: 'center' }}>
           <Text style={[styles.title, { fontSize: 32 * scale, marginTop: 10, marginBottom: 10 }]}>Conexión</Text>
           <View style={{ backgroundColor: '#1C1C1E', borderRadius: 13, padding: 16, marginTop: 10 }}>
-          <Text style={{ color: 'white', fontFamily: 'SFProRounded-Semibold', marginBottom: 10, fontSize: 14 * scale }}>Conecte el dispositivo mediante wifi</Text>
+          <Text style={{ color: 'white', fontFamily: fonts.semibold, marginBottom: 10, fontSize: 14 * scale }}>Conecte el dispositivo mediante wifi</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 80, height: 80, borderRadius: 999, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: 40, height: 26, backgroundColor: '#111', borderRadius: 4, opacity: 0.9 }} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: 'white', marginBottom: 8, fontFamily: 'SFProRounded-Semibold' }}>Estatus:</Text>
+              <Text style={{ color: 'white', marginBottom: 8, fontFamily: fonts.semibold }}>Estatus:</Text>
               <View style={{ flexDirection: 'row' }}>
                 <View style={{ flex: 1, height: 28, backgroundColor: connected ? '#16A34A' : '#0B3D1E', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: 'white', fontSize: 12 * scale }}>Conectado</Text>
@@ -42,7 +44,7 @@ export default function Connect() {
 
           {/* CTA */}
           <Pressable disabled={!connected} onPress={() => router.replace('(tabs)')} style={({ pressed }) => [{ backgroundColor: '#A6FF00', height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 14, opacity: !connected ? 0.4 : pressed ? 0.9 : 1 }]}>
-            <Text style={{ color: 'black', fontFamily: 'SFProRounded-Semibold', fontSize: 18 * scale }}>Continuar</Text>
+            <Text style={{ color: 'black', fontFamily: fonts.semibold, fontSize: 18 * scale }}>Continuar</Text>
           </Pressable>
         </ScrollView>
       </AuthBackground>
@@ -53,5 +55,6 @@ export default function Connect() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   container: { flex: 1, backgroundColor: 'black' },
-  title: { position: 'absolute', color: 'white', fontFamily: 'SFProRounded-Semibold' },
+  title: { position: 'absolute', color: 'white', fontFamily: fonts.semibold },
 });
+

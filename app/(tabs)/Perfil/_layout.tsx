@@ -12,11 +12,23 @@ const TAB_STYLE = {
 export default function PerfilLayout() {
   const navigation = useNavigation();
   const pathname = usePathname();
-  const isRoot = useMemo(() => /\/(tabs)\/Perfil\/?$/.test(pathname), [pathname]);
+
+  // Soporta ambas formas: con y sin paréntesis
+  const isRoot = useMemo(() => {
+    return (
+      /^\/\((tabs)\)\/Perfil\/?$/.test(pathname) ||
+      /^\/tabs\/Perfil\/?$/.test(pathname)
+    );
+  }, [pathname]);
 
   useEffect(() => {
-    navigation.getParent()?.setOptions({ tabBarStyle: isRoot ? TAB_STYLE : { display: 'none' } });
-    return () => navigation.getParent()?.setOptions({ tabBarStyle: TAB_STYLE });
+    const parent = navigation.getParent?.();
+    if (!parent) return;
+
+    // OJO: no reemplazar todo; mergea para no romper safe areas/altura
+    parent.setOptions({ tabBarStyle: isRoot ? TAB_STYLE : { ...TAB_STYLE, display: 'none' } });
+
+    return () => parent.setOptions({ tabBarStyle: TAB_STYLE });
   }, [isRoot, navigation]);
 
   return (
