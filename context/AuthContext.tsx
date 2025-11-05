@@ -1,5 +1,25 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
+
+// AsyncStorage optional loader with in-memory fallback
+type StorageLike = {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+};
+
+let Storage: StorageLike;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const AS = require("@react-native-async-storage/async-storage").default as StorageLike;
+  Storage = AS;
+} catch (_err) {
+  const mem = new Map<string, string>();
+  Storage = {
+    async getItem(key) { return mem.has(key) ? mem.get(key)! : null; },
+    async setItem(key, value) { mem.set(key, value); },
+    async removeItem(key) { mem.delete(key); },
+  };
+}
 
 interface User {
 uid: string;
@@ -30,14 +50,14 @@ const [loading, setLoading] = useState(true);
 // Cargar usuario al iniciar
 useEffect(() => {
 const loadUserFromStorage = async () => {
-try {
-const storedUser = await AsyncStorage.getItem("user");
+  try {
+const storedUser = await Storage.getItem("user");
 if (storedUser) setUser(JSON.parse(storedUser));
-} catch (error) {
+  } catch (error) {
 console.error("Error al cargar usuario:", error);
-} finally {
+  } finally {
 setLoading(false);
-}
+  }
 };
 loadUserFromStorage();
 }, []);
@@ -45,24 +65,24 @@ loadUserFromStorage();
 // Guardar usuario cada vez que cambie
 useEffect(() => {
 const persistUser = async () => {
-try {
-if (user) await AsyncStorage.setItem("user", JSON.stringify(user));
-else await AsyncStorage.removeItem("user");
-} catch (error) {
+  try {
+if (user) await Storage.setItem("user", JSON.stringify(user));
+else await Storage.removeItem("user");
+  } catch (error) {
 console.error("Error al guardar usuario:", error);
-}
+  }
 };
 if (!loading) persistUser();
 }, [user, loading]);
 
 const login = async (userData: User) => {
 setUser(userData);
-await AsyncStorage.setItem("user", JSON.stringify(userData));
+await Storage.setItem("user", JSON.stringify(userData));
 };
 
 const logout = async () => {
 setUser(null);
-await AsyncStorage.removeItem("user");
+await Storage.removeItem("user");
 };
 
 return (

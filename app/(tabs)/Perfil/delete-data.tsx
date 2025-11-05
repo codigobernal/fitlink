@@ -1,40 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { deleteUser, getAuth } from 'firebase/auth'; // 👈 Import necesario
-import React, { useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
-} from 'react-native';
-import { Modal } from '../modal';
+import { deleteUser, getAuth } from 'firebase/auth';
+import React, { useMemo, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { auth } from '../../../firebaseConfig';
+import { fonts } from '../../../constants/fonts';
 
 export default function DeleteData() {
   const [confirm, setConfirm] = useState('');
-  const [isModalVisible, setModalVisible] = useState(false);
-  const enabled = confirm.trim().toUpperCase() === 'ELIMINAR';
+  const enabled = confirm === 'ELIMINAR';
+  const currentEmail = useMemo(() => auth.currentUser?.email ?? '', []);
 
-  const handleConfirmPress = () => {
-    if (enabled) {
-      setModalVisible(true);
-    }
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-  };
-
-  // 🔥 Lógica para eliminar la cuenta
   const handleDeleteAccount = async () => {
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
+      const authInstance = getAuth();
+      const user = authInstance.currentUser;
       if (user) {
         await deleteUser(user);
         Alert.alert('Cuenta eliminada', 'Tu cuenta ha sido eliminada correctamente.');
@@ -42,13 +23,27 @@ export default function DeleteData() {
       }
     } catch (error: any) {
       console.error('Error al eliminar la cuenta:', error);
-      Alert.alert(
-        'Error',
-        'No se pudo eliminar la cuenta. Es posible que necesites volver a iniciar sesión para confirmar la eliminación.'
-      );
-    } finally {
-      closeModal();
+      if (error?.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          'Vuelve a iniciar sesión',
+          'Por seguridad necesitamos que vuelvas a iniciar sesión antes de eliminar tu cuenta.'
+        );
+      } else {
+        Alert.alert('Error', 'No se pudo eliminar la cuenta. Inténtalo nuevamente.');
+      }
     }
+  };
+
+  const handleConfirmPress = () => {
+    if (!enabled) return;
+    Alert.alert(
+      'Confirmar eliminación',
+      'Se eliminará tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: handleDeleteAccount },
+      ]
+    );
   };
 
   return (
@@ -65,9 +60,10 @@ export default function DeleteData() {
 
         <View style={styles.card}>
           <Text style={styles.body}>
-            {`Al continuar, se eliminarán todos los datos almacenados en tu cuenta FitLink, incluyendo historiales y configuraciones. Esta acción no se puede deshacer.
-            
-Escribe ELIMINAR para confirmar:`}
+            {`Al continuar, se eliminarán todos los datos almacenados en tu cuenta FitLink, incluyendo historiales y configuraciones. Esta acción no se puede deshacer.`}
+          </Text>
+          <Text style={[styles.body, { marginTop: 12 }]}>
+            Escribe <Text style={styles.boldText}>ELIMINAR</Text> para confirmar:
           </Text>
           <TextInput
             value={confirm}
@@ -75,7 +71,12 @@ Escribe ELIMINAR para confirmar:`}
             placeholder="ELIMINAR"
             placeholderTextColor="#9E9EA0"
             style={styles.input}
+            autoCapitalize="characters"
+            autoCorrect={false}
           />
+          <Text style={[styles.helper, { color: confirm && !enabled ? '#FF6B6B' : '#9E9EA0' }]}>
+            Debe coincidir exactamente en mayúsculas.
+          </Text>
           <Pressable
             disabled={!enabled}
             onPress={handleConfirmPress}
@@ -87,31 +88,15 @@ Escribe ELIMINAR para confirmar:`}
             <Text style={styles.primaryText}>Confirmar</Text>
           </Pressable>
         </View>
-      </ScrollView>
 
-      <Modal
-        isOpen={isModalVisible}
-        withInput={false}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalText}>¿Quieres eliminar todos los datos?</Text>
-          <View style={styles.modalActions}>
-            <Pressable
-              style={[styles.modalButton, styles.modalCancelButton]}
-              onPress={closeModal}
-            >
-              <Text style={styles.modalButtonText}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.modalButton, styles.modalDeleteButton]}
-              onPress={handleDeleteAccount} // 👈 Aquí se llama la función
-            >
-              <Text style={styles.modalButtonText}>Eliminar</Text>
-            </Pressable>
+        {currentEmail ? (
+          <View style={[styles.card, { marginTop: 16 }]}>
+            <Text style={[styles.body, { opacity: 0.6 }]}>
+              Sesión actual: {currentEmail}
+            </Text>
           </View>
-        </View>
-      </Modal>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -132,7 +117,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: 'white',
     fontFamily: fonts.regular,
+    letterSpacing: 1,
   },
+  helper: { marginTop: 6, fontSize: 11, fontFamily: fonts.regular },
   primaryBtn: {
     marginTop: 14,
     height: 46,
@@ -141,24 +128,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryText: { color: '#111', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
+  primaryText: { color: '#111', fontFamily: fonts.semibold, fontSize: 16 },
   boldText: { fontWeight: 'bold' },
-  modalContent: {
-    backgroundColor: '#1e1e1e',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalText: { color: 'white', fontSize: 16, marginBottom: 20, fontWeight: 'bold' },
-  modalActions: { flexDirection: 'row', gap: 10, backgroundColor: '#1e1e1e' },
-  modalButton: {
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#1e1e1e',
-  },
-  modalDeleteButton: { backgroundColor: '#FF3B30', color: '#fff' },
-  modalCancelButton: { backgroundColor: '#444' },
-  modalButtonText: { color: '#fff', fontWeight: 'bold' },
 });
 

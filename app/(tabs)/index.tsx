@@ -1,22 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-import { limitToLast, onValue, orderByChild, query, ref } from 'firebase/database';
-import { onAuthStateChanged } from 'firebase/auth';
-=======
->>>>>>> 3d2ccb904715937ee2604dd284f3644562de328b
 import { router } from 'expo-router';
 import { limitToLast, onValue, orderByChild, query, ref } from 'firebase/database';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useMemo, useState } from 'react';
-<<<<<<< HEAD
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-=======
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
->>>>>>> 3d2ccb904715937ee2604dd284f3644562de328b
 import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
-import { db } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
+import { fonts } from '../../constants/fonts';
 
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
 
@@ -134,8 +125,10 @@ export default function Home() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.h1}><Text style={styles.boldText}>Inicio</Text></Text>
-          <View style={styles.avatar} />
+          <Text style={styles.h1}>Inicio</Text>
+          <View style={[styles.headerIcon, { backgroundColor: profileIcon.color || '#2B2B2E' }]}>
+            <Ionicons name={profileIcon.name || 'person'} size={18} color="#111" />
+          </View>
         </View>
 
         <View style={styles.cardSmall}>
@@ -143,9 +136,9 @@ export default function Home() {
             <View style={styles.wifiCircle}>
               <Ionicons name="wifi" size={18} color="#111" />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.caption}>Estado</Text>
-              <Text numberOfLines={1} style={[styles.status, { color: connected ? '#A6FF00' : '#FF5757' }]}>
+              <Text numberOfLines={1} style={[styles.status, { color: connected? '#A6FF00' : '#FF5757' }]}>
                 {connected ? 'Conectado' : 'Desconectado'}
               </Text>
             </View>
@@ -211,32 +204,33 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF' },
-  caption: { color: 'white', opacity: 0.7, fontSize: 12, fontFamily: 'SFProRounded-Regular' },
-  status: { fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
-  link: { color: 'white', opacity: 0.9, fontSize: 12, fontFamily: 'SFProRounded-Regular' },
+  h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
+  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  headerIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  caption: { color: 'white', opacity: 0.7, fontSize: 12, fontFamily: fonts.regular },
+  status: { fontSize: 16, fontFamily: fonts.semibold },
+  link: { color: 'white', opacity: 0.9, fontSize: 12, fontFamily: fonts.regular },
   statusRow: { flexDirection: 'row', alignItems: 'center' },
   cardSmall: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 16, marginBottom: 16 },
   cardLarge: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 16, marginBottom: 16 },
   chartCard: { overflow: 'hidden' },
   heartCard: { alignItems: 'center', justifyContent: 'center', height: 200 },
-  cardTitle: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold', marginBottom: 8 },
-  empty: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular' },
-  wifiCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#A6FF00', alignItems: 'center', justifyContent: 'center' },
-  bpmText: { fontSize: 28, fontFamily: 'SFProRounded-Semibold' },
-  section: { color: 'white', fontSize: 20, fontFamily: 'SFProRounded-Semibold', marginTop: 6, marginBottom: 8 },
-  row: { color: 'white', fontFamily: 'SFProRounded-Regular' },
+  cardTitle: { color: 'white', fontSize: 16, fontFamily: fonts.semibold, marginBottom: 8 },
+  empty: { color: '#9E9EA0', fontFamily: fonts.regular },
+  wifiCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#A6FF00', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  bpmText: { fontSize: 28, fontFamily: fonts.semibold },
+  section: { color: 'white', fontSize: 20, fontFamily: fonts.semibold, marginTop: 6, marginBottom: 8 },
+  row: { color: 'white', fontFamily: fonts.regular },
   rowCard: { backgroundColor: '#1C1C1E', borderRadius: 14, padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
   dot: { width: 22, height: 22, borderRadius: 11 },
-  rowStrong: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
-  rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
-  rowRight: { color: 'white', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
-  statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
-  statValue: { fontFamily: 'SFProRounded-Semibold' },
+  rowStrong: { color: 'white', fontSize: 16, fontFamily: fonts.semibold },
+  rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: fonts.regular },
+  rowRight: { color: 'white', fontSize: 12, fontFamily: fonts.regular },
+  statTitle: { color: 'white', fontFamily: fonts.semibold },
+  statValue: { fontFamily: fonts.semibold },
   pitchWrap: { aspectRatio: 16/10, borderRadius: 16, overflow: 'hidden' },
   switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
+  switcherTitle: { color: 'white', fontFamily: fonts.semibold, fontSize: 16 },
   boldText: {fontWeight: 'bold'}
 });
 
@@ -283,27 +277,4 @@ function SoccerField({ points = [] as FieldPoint[] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'black' },
-  scroll: { paddingHorizontal: 20, paddingTop: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
-  headerIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  caption: { color: 'white', opacity: 0.7, fontSize: 12, fontFamily: fonts.regular },
-  status: { fontSize: 16, fontFamily: fonts.semibold },
-  link: { color: 'white', opacity: 0.9, fontSize: 12, fontFamily: fonts.regular },
-  statusRow: { flexDirection: 'row', alignItems: 'center' },
-  cardSmall: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 16, marginBottom: 16 },
-  cardLarge: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 16, marginBottom: 16 },
-  cardTitle: { color: 'white', fontSize: 16, fontFamily: fonts.semibold, marginBottom: 8 },
-  empty: { color: '#9E9EA0', fontFamily: fonts.regular },
-  wifiCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#A6FF00', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
-  switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  switcherTitle: { color: 'white', fontFamily: fonts.semibold, fontSize: 16 },
-  rowStrong: { color: 'white', fontSize: 16, fontFamily: fonts.semibold },
-  rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: fonts.regular },
-  statTitle: { color: 'white', fontFamily: fonts.semibold },
-  statValue: { fontFamily: fonts.semibold },
-});
 

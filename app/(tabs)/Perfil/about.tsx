@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { fonts } from '../../../constants/fonts';
 
 export default function About() {
   return (
@@ -40,7 +42,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, flexShrink: 1, marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18 },
-  body: { color: 'white', fontFamily: 'SFProRounded-Regular', fontSize: 13, lineHeight: 19 },
+  body: { color: 'white', fontFamily: fonts.regular, fontSize: 13, lineHeight: 19 },
   italicsText: {
     fontStyle: 'italic',
   },
