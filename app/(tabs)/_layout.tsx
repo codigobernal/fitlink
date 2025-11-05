@@ -2,11 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
-<<<<<<< Updated upstream
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-=======
->>>>>>> Stashed changes
 
 import { HapticTab } from '@/components/haptic-tab';
 import { fonts } from '../../constants/fonts';

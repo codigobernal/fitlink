@@ -105,6 +105,7 @@ const getFirebaseErrorMessage = (errorCode: string): string | null => {
         <StatusBar style="light" />
         <AuthBackground>
         <ScrollView contentContainerStyle={styles.scrollCentered}>
+<<<<<<< HEAD
 <<<<<<< Updated upstream
           <Text style={styles.title}>Crea tu cuenta</Text>
           <View style={styles.card}>
@@ -125,6 +126,8 @@ const getFirebaseErrorMessage = (errorCode: string): string | null => {
             <Text style={styles.primaryText}>Continuar</Text>
           </Pressable>
 =======
+=======
+>>>>>>> 3d2ccb904715937ee2604dd284f3644562de328b
         <Text style={styles.title}>
         <Text style={styles.boldText}>Crear tu cuenta</Text>
         </Text>
@@ -181,7 +184,6 @@ const getFirebaseErrorMessage = (errorCode: string): string | null => {
         >
         <Text style={styles.primaryText}>Continuar</Text>
         </Pressable>
->>>>>>> Stashed changes
         </ScrollView>
         </AuthBackground>
         </SafeAreaView>

@@ -19,21 +19,6 @@ export default function Help() {
           <Text style={styles.h4}><Text style={styles.boldText}>¿Tienes dudas sobre el funcionamiento del chaleco inteligente o la aplicación móvil?</Text></Text>
             {`
 
-<<<<<<< Updated upstream
-📘 Guia rapida:
-• Asegurate de que el chaleco este conectado via WiFi.
-• Revisa que las metricas en la app se actualicen en tiempo real.
-• Si no ves datos, reinicia el dispositivo o vuelve a emparejar.
-
-💡 Consejos utiles:
-• Mantén el chaleco cargado antes de entrenar.
-• Usa la app durante la actividad para obtener metricas precisas.
-• Consulta el historial para revisar tus progresos.
-
-📩 ¿Necesitas mas ayuda?
-• Email: soporte@fitlink.com
-• Web: www.fitlink.com/ayuda
-=======
 En FitLink queremos brindarte la mejor experiencia posible.
 
 📘 Guía rápida:`}
@@ -54,7 +39,6 @@ En FitLink queremos brindarte la mejor experiencia posible.
     </View>
 {`
 💡 Consejos útiles:`}
->>>>>>> Stashed changes
 
     <View style={styles.listContainer}>
       <View style={styles.listItem}>
