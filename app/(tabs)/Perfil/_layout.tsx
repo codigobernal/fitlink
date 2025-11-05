@@ -1,9 +1,9 @@
-import { Stack, useNavigation, usePathname } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { Stack, useNavigation, usePathname } from "expo-router";
+import { useEffect, useMemo } from "react";
 
 const TAB_STYLE = {
-  backgroundColor: '#2A2A2C',
-  borderTopColor: '#2A2A2C',
+  backgroundColor: "#2A2A2C",
+  borderTopColor: "#2A2A2C",
   height: 64,
   paddingBottom: 6,
   paddingTop: 6,
@@ -22,13 +22,10 @@ export default function PerfilLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    const parent = navigation.getParent?.();
-    if (!parent) return;
-
-    // OJO: no reemplazar todo; mergea para no romper safe areas/altura
-    parent.setOptions({ tabBarStyle: isRoot ? TAB_STYLE : { ...TAB_STYLE, display: 'none' } });
-
-    return () => parent.setOptions({ tabBarStyle: TAB_STYLE });
+    navigation.getParent()?.setOptions({
+      tabBarStyle: isRoot ? TAB_STYLE : { display: "none" },
+    });
+    return () => navigation.getParent()?.setOptions({ tabBarStyle: TAB_STYLE });
   }, [isRoot, navigation]);
 
   return (
