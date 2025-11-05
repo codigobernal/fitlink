@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 32,
-    gap: 16,
+    // Avoid gap for RN compatibility
     overflow: 'hidden',
   },
 });

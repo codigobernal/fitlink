@@ -61,7 +61,7 @@ export default function EditProfile() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 20 },
   avatarWrap: { width: 104, height: 104, borderRadius: 52, marginBottom: 16, position: 'relative' },

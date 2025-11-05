@@ -36,7 +36,8 @@ const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    // Remove gap for broader native compatibility
+    // Consumers should add spacing via margins if needed
   },
   content: {
     marginTop: 6,

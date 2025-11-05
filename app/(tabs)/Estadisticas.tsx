@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Animated, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { onValue, ref, query, orderByChild, limitToLast, remove } from 'firebase/database';
@@ -10,6 +11,7 @@ type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; 
 function toMillis(ts: any) { if (typeof ts === 'number') return ts > 1e12 ? ts : ts * 1000; const n = Number(ts); if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000; const d = new Date(ts); return Number.isNaN(d.getTime()) ? 0 : d.getTime(); }
 
 export default function Estadisticas() {
+  const insets = useSafeAreaInsets();
   const [lecturas, setLecturas] = useState<Lectura[]>([]);
   useEffect(() => {
     const q = query(ref(db, 'lecturas'), orderByChild('timestamp'), limitToLast(20));
@@ -58,7 +60,7 @@ export default function Estadisticas() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <View style={styles.headerRow}>
           <Text style={styles.h1}>Estadisticas</Text>
           <View style={styles.avatar} />
@@ -175,8 +177,8 @@ function DateSwitcher() {
 function StatItem({ color, title, value, valueColor }: { color: string; title: string; value: string; valueColor: string }) {
   return (
     <View style={[styles.card, styles.statRow]}> 
-      <View style={[styles.statDot, { backgroundColor: color }]} />
-      <View style={{ gap: 4 }}>
+      <View style={[styles.statDot, { backgroundColor: color, marginRight: 12 }]} />
+      <View>
         <Text style={styles.statTitle}>{title}</Text>
         <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
       </View>
@@ -234,11 +236,11 @@ const styles = StyleSheet.create({
   switcherArrow: { color: 'white', fontSize: 18, paddingHorizontal: 8 },
   switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
   section: { color: 'white', fontSize: 20, fontFamily: 'SFProRounded-Semibold', marginTop: 6, marginBottom: 8 },
-  rowCard: { backgroundColor: '#1C1C1E', borderRadius: 14, padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowCard: { backgroundColor: '#1C1C1E', borderRadius: 14, padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
   dot: { width: 22, height: 22, borderRadius: 11 },
   rowStrong: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
   rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
-  statRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  statRow: { flexDirection: 'row', alignItems: 'center', padding: 12 },
   statDot: { width: 28, height: 28, borderRadius: 14 },
   statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   statValue: { fontFamily: 'SFProRounded-Semibold' },

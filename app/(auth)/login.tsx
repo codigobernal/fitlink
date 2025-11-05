@@ -36,7 +36,7 @@ export default function Login() {
             <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="correo@ejemplo.com" placeholderTextColor="#9E9EA0" style={styles.input} />
             <Text style={[styles.label, { marginTop: 10 }]}>Contraseña:</Text>
             <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Pressable onPress={() => router.push('/(auth)/register')} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
+            <Pressable onPress={() => router.push('/register')} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
               <Text style={styles.link}>¿No tienes cuenta? Registrate aqui</Text>
             </Pressable>
           </View>
@@ -53,10 +53,10 @@ export default function Login() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   container: { flex: 1, backgroundColor: 'black' },
-  scroll: { padding: 20, paddingTop: 24, gap: 14 },
-  scrollCentered: { padding: 20, paddingTop: 24, gap: 14, flexGrow: 1, justifyContent: 'center' },
+  scroll: { padding: 20, paddingTop: 24 },
+  scrollCentered: { padding: 20, paddingTop: 24, flexGrow: 1, justifyContent: 'center' },
   title: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 32, marginTop: 10, marginBottom: 10 },
-  card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, gap: 8 },
+  card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16 },
   label: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   input: { borderWidth: 1, borderColor: 'white', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, color: 'white', fontFamily: 'SFProRounded-Regular' },
   primaryBtn: { backgroundColor: '#A6FF00', height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

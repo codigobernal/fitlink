@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { HapticTab } from '@/components/haptic-tab';
@@ -26,6 +27,9 @@ function circleIcon(icon: keyof typeof Ionicons.glyphMap) {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(6, insets.bottom);
+  const height = 56 + bottomPad; // keep compact, avoid home indicator overlap
   return (
     <Tabs
       screenOptions={{
@@ -34,8 +38,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#2A2A2C',
           borderTopColor: '#2A2A2C',
-          height: 68,
-          paddingBottom: 6,
+          height,
+          paddingBottom: bottomPad,
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontSize: 13, fontFamily: 'SFProRounded-Semibold' },

@@ -17,13 +17,13 @@ export default function Connect() {
           <Text style={[styles.title, { fontSize: 32 * scale, marginTop: 10, marginBottom: 10 }]}>Conexión</Text>
           <View style={{ backgroundColor: '#1C1C1E', borderRadius: 13, padding: 16, marginTop: 10 }}>
           <Text style={{ color: 'white', fontFamily: 'SFProRounded-Semibold', marginBottom: 10, fontSize: 14 * scale }}>Conecte el dispositivo mediante wifi</Text>
-          <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 80, height: 80, borderRadius: 999, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: 40, height: 26, backgroundColor: '#111', borderRadius: 4, opacity: 0.9 }} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: 'white', marginBottom: 8, fontFamily: 'SFProRounded-Semibold' }}>Estatus:</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flexDirection: 'row' }}>
                 <View style={{ flex: 1, height: 28, backgroundColor: connected ? '#16A34A' : '#0B3D1E', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: 'white', fontSize: 12 * scale }}>Conectado</Text>
                 </View>

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { auth, db } from '../../../firebaseConfig';
 import { onValue, ref } from 'firebase/database';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const OPTION_STYLES = {
   change: { background: '#3d300eff', color: '#FFD166' },
@@ -14,24 +15,30 @@ const OPTION_STYLES = {
 } as const;
 
 export default function Informacion() {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState<string | null>(auth.currentUser?.displayName ?? null);
   const [email, setEmail] = useState<string | null>(auth.currentUser?.email ?? null);
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-    const userRef = ref(db, `users/${uid}`);
-    const unsub = onValue(userRef, (snap) => {
-      const data = snap.val();
-      if (data?.username) setName(String(data.username));
-      if (data?.email) setEmail(String(data.email));
+    // Escucha auth para refrescar nombre/email
+    const offAuth = onAuthStateChanged(auth, (u) => {
+      setName(u?.displayName ?? null);
+      setEmail(u?.email ?? null);
+      if (!u) return;
+      const userRef = ref(db, `users/${u.uid}`);
+      const off = onValue(userRef, (snap) => {
+        const data = snap.val();
+        if (data?.username) setName(String(data.username));
+        if (data?.email) setEmail(String(data.email));
+      });
+      return off;
     });
-    return () => unsub();
+    return () => offAuth();
   }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <Text style={styles.h1}>Informacion</Text>
 
         <Pressable onPress={() => router.push('/(tabs)/Perfil/edit')} style={({ pressed }) => [styles.card, styles.row, { opacity: pressed ? 0.92 : 1 }]}> 
@@ -85,7 +92,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
   h1: { color: 'white', fontSize: 32, fontFamily: 'SFProRounded-Semibold', marginTop: 10, marginBottom: 16 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, marginBottom: 12 },
-  row: { padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  row: { padding: 16, flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFF' },
   name: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
   email: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular', fontSize: 13 },
