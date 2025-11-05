@@ -1,20 +1,15 @@
-<<<<<<< Updated upstream
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Animated, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Ionicons } from '@expo/vector-icons';
+import { limitToLast, onValue, orderByChild, query, ref, remove } from 'firebase/database';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { onValue, ref, query, orderByChild, limitToLast, remove } from 'firebase/database';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 import { db } from '../../firebaseConfig';
-import { Dimensions } from 'react-native';
 
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
 function toMillis(ts: any) { if (typeof ts === 'number') return ts > 1e12 ? ts : ts * 1000; const n = Number(ts); if (!Number.isNaN(n)) return n > 1e12 ? n : n * 1000; const d = new Date(ts); return Number.isNaN(d.getTime()) ? 0 : d.getTime(); }
-=======
-import React, { useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
->>>>>>> Stashed changes
 
 export default function Estadisticas() {
   const insets = useSafeAreaInsets();
@@ -50,7 +45,7 @@ export default function Estadisticas() {
     );
     anim.start();
     return () => anim.stop();
-  }, [bpm, bpmGood]);
+  }, [bpm, bpmGood, heartScale]);
   const chartConfig = {
     backgroundGradientFrom: '#1C1C1E',
     backgroundGradientTo: '#1C1C1E',
@@ -238,7 +233,6 @@ const styles = StyleSheet.create({
   cardTitle: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold', marginBottom: 8 },
   empty: { color: '#9E9EA0', fontFamily: 'SFProRounded-Regular' },
   pitchWrap: { aspectRatio: 16 / 10, borderRadius: 16, overflow: 'hidden' },
-<<<<<<< Updated upstream
   switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   switcherArrow: { color: 'white', fontSize: 18, paddingHorizontal: 8 },
   switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
@@ -251,12 +245,5 @@ const styles = StyleSheet.create({
   statDot: { width: 28, height: 28, borderRadius: 14 },
   statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   statValue: { fontFamily: 'SFProRounded-Semibold' },
-=======
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 14 },
-  gridItem: { width: '30%', alignItems: 'center' },
-  gridTop: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },
-  gridBottom: { color: '#FF5757', fontFamily: 'SFProRounded-Semibold', fontSize: 12 },boldText: {
-    fontWeight: 'bold',
-  },
->>>>>>> Stashed changes
+  boldText: {fontWeight: 'bold'},
 });

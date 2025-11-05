@@ -103,26 +103,6 @@ const getFirebaseErrorMessage = (errorCode: string): string | null => {
         <StatusBar style="light" />
         <AuthBackground>
         <ScrollView contentContainerStyle={styles.scrollCentered}>
-<<<<<<< Updated upstream
-          <Text style={styles.title}>Crea tu cuenta</Text>
-          <View style={styles.card}>
-            <Text style={styles.label}>Usuario:</Text>
-            <TextInput value={username} onChangeText={setUsername} placeholder="Tu usuario" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Text style={[styles.label, { marginTop: 10 }]}>Correo electrónico:</Text>
-            <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="correo@ejemplo.com" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Text style={[styles.label, { marginTop: 10 }]}>Contraseña:</Text>
-            <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Text style={[styles.label, { marginTop: 10 }]}>Confirmar contraseña:</Text>
-            <TextInput value={confirm} onChangeText={setConfirm} secureTextEntry placeholder="••••••••" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Pressable onPress={() => router.push('/login')} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
-              <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-            </Pressable>
-          </View>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable disabled={loading} onPress={onSubmit} style={({ pressed }) => [styles.primaryBtn, { opacity: loading ? 0.5 : pressed ? 0.9 : 1 }]}>
-            <Text style={styles.primaryText}>Continuar</Text>
-          </Pressable>
-=======
         <Text style={styles.title}>
         <Text style={styles.boldText}>Crear tu cuenta</Text>
         </Text>
@@ -179,7 +159,6 @@ const getFirebaseErrorMessage = (errorCode: string): string | null => {
         >
         <Text style={styles.primaryText}>Continuar</Text>
         </Pressable>
->>>>>>> Stashed changes
         </ScrollView>
         </AuthBackground>
         </SafeAreaView>

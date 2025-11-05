@@ -59,11 +59,6 @@ export default function Login() {
               style={styles.input}
             />
             <Text style={[styles.label, { marginTop: 10 }]}>Contraseña:</Text>
-<<<<<<< Updated upstream
-            <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" placeholderTextColor="#9E9EA0" style={styles.input} />
-            <Pressable onPress={() => router.push('/register')} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
-              <Text style={styles.link}>¿No tienes cuenta? Registrate aqui</Text>
-=======
             <TextInput
               value={password}
               onChangeText={setPassword}
@@ -77,7 +72,6 @@ export default function Login() {
               style={{ alignSelf: 'flex-end', marginTop: 8 }}
             >
               <Text style={styles.link}>¿No tienes cuenta? Regístrate aquí</Text>
->>>>>>> Stashed changes
             </Pressable>
           </View>
 
@@ -101,13 +95,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
-<<<<<<< Updated upstream
-  container: { flex: 1, backgroundColor: 'black' },
-  scroll: { padding: 20, paddingTop: 24 },
-  scrollCentered: { padding: 20, paddingTop: 24, flexGrow: 1, justifyContent: 'center' },
-=======
   scrollCentered: { padding: 20, paddingTop: 24, gap: 14, flexGrow: 1, justifyContent: 'center' },
->>>>>>> Stashed changes
   title: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 32, marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16 },
   label: { color: 'white', fontFamily: 'SFProRounded-Semibold' },

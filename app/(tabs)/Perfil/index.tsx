@@ -1,13 +1,3 @@
-<<<<<<< Updated upstream
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { auth, db } from '../../../firebaseConfig';
-import { onValue, ref } from 'firebase/database';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-=======
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -17,7 +7,6 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { auth, db } from '../../../firebaseConfig';
 import { Modal } from '../modal';
->>>>>>> Stashed changes
 
 
  
@@ -29,11 +18,10 @@ const OPTION_STYLES = {
 } as const;
  
 export default function Informacion() {
-  const insets = useSafeAreaInsets();
   const [name, setName] = useState<string | null>(auth.currentUser?.displayName ?? null);
   const [email, setEmail] = useState<string | null>(auth.currentUser?.email ?? null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const handleCloseSession = async () => {
   try {
     await signOut(auth);
@@ -49,22 +37,6 @@ export default function Informacion() {
 
  
   useEffect(() => {
-<<<<<<< Updated upstream
-    // Escucha auth para refrescar nombre/email
-    const offAuth = onAuthStateChanged(auth, (u) => {
-      setName(u?.displayName ?? null);
-      setEmail(u?.email ?? null);
-      if (!u) return;
-      const userRef = ref(db, `users/${u.uid}`);
-      const off = onValue(userRef, (snap) => {
-        const data = snap.val();
-        if (data?.username) setName(String(data.username));
-        if (data?.email) setEmail(String(data.email));
-      });
-      return off;
-    });
-    return () => offAuth();
-=======
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const userRef = ref(db, `users/${uid}`);
@@ -76,15 +48,9 @@ export default function Informacion() {
  
     return () => unsubscribe();
 
->>>>>>> Stashed changes
   }, []);
  
   return (
-<<<<<<< Updated upstream
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
-        <Text style={styles.h1}>Informacion</Text>
-=======
 <SafeAreaView style={styles.safe}>
 <ScrollView contentContainerStyle={styles.scroll}>
 <Text style={styles.h1}>
@@ -102,67 +68,14 @@ export default function Informacion() {
 </View>
 <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
 </Pressable>
- 
-        <Option
-          icon="key"
-          label="Modificar contraseña"
-          background={OPTION_STYLES.change.background}
-          color={OPTION_STYLES.change.color}
-          onPress={() => router.push('/(tabs)/Perfil/change-password')}
-        />
-        <Option
-          icon="trash"
-          label="Borrar datos"
-          background={OPTION_STYLES.delete.background}
-          color={OPTION_STYLES.delete.color}
-           onPress={() => router.push('/(tabs)/Perfil/delete-data')}
-        />
-        <Option
->>>>>>> Stashed changes
-
-          icon="information-circle"
-          label="Acerca de nosotros"
-          background={OPTION_STYLES.about.background}
-          color={OPTION_STYLES.about.color}
-          onPress={() => router.push('/(tabs)/Perfil/about')}
-        />
-        <Option
-
-<<<<<<< Updated upstream
-        <Option icon="key" label="Modificar contrasena" background={OPTION_STYLES.change.background} color={OPTION_STYLES.change.color} onPress={() => router.push('/(tabs)/Perfil/change-password')} />
+        <Option icon="key" label="Modificar contraseña" background={OPTION_STYLES.change.background} color={OPTION_STYLES.change.color} onPress={() => router.push('/(tabs)/Perfil/change-password')} />
         <Option icon="trash" label="Borrar datos" background={OPTION_STYLES.delete.background} color={OPTION_STYLES.delete.color} onPress={() => router.push('/(tabs)/Perfil/delete-data')} />
         <Option icon="information-circle" label="Acerca de nosotros" background={OPTION_STYLES.about.background} color={OPTION_STYLES.about.color} onPress={() => router.push('/(tabs)/Perfil/about')} />
         <Option icon="help-circle" label="Ayuda" background={OPTION_STYLES.help.background} color={OPTION_STYLES.help.color} onPress={() => router.push('/(tabs)/Perfil/help')} />
         <Option icon="document-text" label="Aviso de privacidad" background="rgba(58, 68, 13, 1)" color="#fff700ff" onPress={() => router.push('/(tabs)/Perfil/privacy')} />
-        <Option
-          icon="log-out"
-          label="Cerrar sesión"
-          background="#3a0b3cff"
-          color="#ff6bd5ff"
-          onPress={() => {
-            Alert.alert('Cerrar sesión', '¿Deseas cerrar sesión?', [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Cerrar sesión', style: 'destructive', onPress: async () => { try { await signOut(auth); router.replace('/(auth)/login'); } catch {} } },
-            ]);
-          }}
-=======
-          icon="help-circle"
-          label="Ayuda"
-          background={OPTION_STYLES.help.background}
-          color={OPTION_STYLES.help.color}
-          onPress={() => router.push('/(tabs)/Perfil/help')}
-         />
-        <Option
-          icon="log-out"
-          label="Cerrar sesión"
-          background="#390f3b"
-          color="#ff6bd5"
-          onPress={() => setModalVisible(true)}
->>>>>>> Stashed changes
-        />
+        <Option icon="log-out" label="Cerrar sesión" background="#390f3b" color="#ff6bd5" onPress={() => setModalVisible(true)} />
 </ScrollView>
  
-      {/* Modal para confirmar cierre de sesión */}
   <Modal isOpen={isModalVisible} withInput={false} onRequestClose={() => setModalVisible(false)}>
       <View style={styles.modalContent}>
       <Text style={styles.modalText}>¿Deseas cerrar sesión?</Text>

@@ -1,17 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< Updated upstream
-import { limitToLast, onValue, orderByChild, query, ref } from 'firebase/database';
 import { router } from 'expo-router';
+import { limitToLast, onValue, orderByChild, query, ref } from 'firebase/database';
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
-=======
-import { limitToLast, onValue, orderByChild, query, ref, remove } from 'firebase/database';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BarChart, LineChart } from 'react-native-chart-kit';
->>>>>>> Stashed changes
 import { db } from '../../firebaseConfig';
 
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
@@ -92,7 +85,6 @@ export default function Home() {
     }
   }
 
-<<<<<<< Updated upstream
   const { total: kmDia, deltas: distDeltas } = inferDistanceKm(lecturasDiaAsc);
   const bpmThreshold = 100; // umbral simple para caminar vs correr
   let distWalk = 0, distRun = 0;
@@ -103,25 +95,6 @@ export default function Home() {
   }
   // kcal estimadas por km (placeholder)
   const kcalDia = kmDia * 65;
-=======
-  const bpm = latest?.pulso ?? 60;
-  const bpmGood = bpm >= 60 && bpm <= 100;
-  const heartScale = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const clamped = Math.max(40, Math.min(160, bpm || 60));
-    const beat = Math.round(60000 / clamped / 2);
-    const amplitude = bpmGood ? 0.25 : 0.08;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(heartScale, { toValue: 1 + amplitude, duration: beat, useNativeDriver: true }),
-        Animated.timing(heartScale, { toValue: 1, duration: beat, useNativeDriver: true }),
-      ]),
-      { resetBeforeIteration: true }
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [bpm, bpmGood, heartScale]);
->>>>>>> Stashed changes
 
   const statItems = [
     { c:'#7F1D1D', t:'Movimiento', v: kmDia ? `${Math.round(kcalDia)} KCAL/DÍA` : '--', vc:'#FF4D4D' },
@@ -155,7 +128,6 @@ export default function Home() {
           </View>
         </View>
 
-<<<<<<< Updated upstream
         <View style={styles.cardLarge}>
           <Text style={styles.cardTitle}>Lectura reciente</Text>
           {latest ? (
@@ -175,44 +147,6 @@ export default function Home() {
                 <Text style={styles.rowStrong}>{latest.distancia} km</Text>
                 <Text style={[styles.rowSub, { marginTop: 6 }]}>Fecha: {new Date(lastMs).toLocaleString()}</Text>
               </View>
-=======
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthPulse(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
-          <Text style={styles.cardTitle}>Pulso</Text>
-          {last12.length > 1 ? (
-            <BarChart data={{ labels, datasets: [{ data: pulsoValues }] }} width={widthPulse} height={160} chartConfig={chartConfig} withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} yAxisLabel=""  yAxisSuffix=" ppm"/>
-          ) : (
-            <Text style={styles.empty}>Sin datos recientes</Text>
-          )}
-        </View>
-
-        <View style={[styles.cardLarge, styles.chartCard]} onLayout={(e) => setWidthOxy(Math.max(160, Math.floor(e.nativeEvent.layout.width - 32)))}>
-          <Text style={styles.cardTitle}>Oxígeno</Text>
-          {last12.length > 1 ? (
-            <LineChart data={{ labels, datasets: [{ data: oxigenoValues }] }} width={widthOxy} height={160} chartConfig={{ ...chartConfig, color: (o=1)=>`rgba(255,255,255,${o})`, fillShadowGradientFrom: '#FFFFFF', fillShadowGradientTo: '#FFFFFF' }} withDots bezier withInnerLines={false} fromZero style={{ borderRadius: 16, alignSelf: 'center' }} />
-          ) : (
-            <Text style={styles.empty}>Sin datos recientes</Text>
-          )}
-        </View>
-
-        <View style={[styles.cardLarge, styles.heartCard]}>
-          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-            <Ionicons name="heart" size={96} color={bpmGood ? '#FF2D55' : '#9E1C1C'} />
-          </Animated.View>
-          <Text style={[styles.caption, { marginTop: 6 }]}>Bla bla bla</Text>
-          <Text style={[styles.bpmText, { color: bpmGood ? '#A6FF00' : 'white' }]}>
-            {bpm || '--'} <Text style={{ color: '#FF5757' }}>BPM</Text>
-          </Text>
-        </View>
-
-        <View style={styles.cardLarge}>
-          <Text style={styles.cardTitle}><Text style={styles.boldText}>Última lectura</Text></Text>
-          {latest ? (
-            <View style={{ gap: 6 }}>
-              <Text style={styles.row}><Text style={styles.boldText}>Pulso: </Text>{latest.pulso}</Text>
-              <Text style={styles.row}><Text style={styles.boldText}>Oxígeno: </Text>{latest.oxigeno}%</Text>
-              <Text style={styles.row}><Text style={styles.boldText}>Distancia: </Text>{latest.distancia} km</Text>
-              <Text style={styles.row}><Text style={styles.rowSub}>{new Date(lastMs).toLocaleString()}</Text></Text>
->>>>>>> Stashed changes
             </View>
           ) : (
             <Text style={styles.empty}>Aun no hay lecturas</Text>
@@ -272,17 +206,12 @@ const styles = StyleSheet.create({
   rowStrong: { color: 'white', fontSize: 16, fontFamily: 'SFProRounded-Semibold' },
   rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
   rowRight: { color: 'white', fontSize: 12, fontFamily: 'SFProRounded-Regular' },
-<<<<<<< Updated upstream
   statTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold' },
   statValue: { fontFamily: 'SFProRounded-Semibold' },
   pitchWrap: { aspectRatio: 16/10, borderRadius: 16, overflow: 'hidden' },
   switcher: { backgroundColor: '#1C1C1E', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   switcherTitle: { color: 'white', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
-=======
-   boldText: {
-    fontWeight: 'bold',
-  },
->>>>>>> Stashed changes
+  boldText: {fontWeight: 'bold'}
 });
 
 // Helpers fecha + campo

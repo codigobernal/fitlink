@@ -22,18 +22,12 @@ Nuestro chaleco inteligente, equipado con sensores de última generación, monit
 
 Objetivo: fusionar innovación, salud y rendimiento para ayudar a cada deportista a entrenar con propósito y alcanzar su máximo potencial.
 
-<<<<<<< Updated upstream
-🌐 Mas informacion: www.fitlink.com
-📧 Contacto: contacto@fitlink.com`}
-          </Text>
-=======
 🌐 Más información: `}
   <Text style={styles.italicsText}>www.fitlink.com</Text>
   {`
 📧 Contacto: `}
   <Text style={styles.italicsText}>contacto@fitlink.com</Text>
 </Text>
->>>>>>> Stashed changes
         </View>
       </ScrollView>
     </SafeAreaView>
