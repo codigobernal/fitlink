@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
-import { useAuth } from '../../../context/AuthContext';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { fonts } from '../../../constants/fonts';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function ChangePassword() {
   const { user } = useAuth();
@@ -25,7 +25,7 @@ export default function ChangePassword() {
     return null;
   };
 
-  const onSubmit = async () => {
+  const onSubmit = useCallback(async () => {
     const validationError = validatePasswords();
     if (validationError) { setError(validationError); return; }
 
@@ -59,7 +59,12 @@ export default function ChangePassword() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [confirm, current, next, user]);
+
+  const submitDisabled = useMemo(
+    () => loading || !current.trim() || !next.trim() || !confirm.trim(),
+    [loading, current, next, confirm]
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -78,11 +83,11 @@ export default function ChangePassword() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {success ? <Text style={styles.success}>{success}</Text> : null}
           <Pressable
-            disabled={!current || !next || !confirm || loading}
+            disabled={submitDisabled}
             onPress={onSubmit}
             style={({ pressed }) => [
               styles.primaryBtn,
-              { opacity: current && next && confirm ? (pressed ? 0.9 : 1) : 0.4 },
+              { opacity: submitDisabled ? 0.4 : pressed ? 0.9 : 1 },
             ]}
           >
             {loading ? <ActivityIndicator color="#111" /> : <Text style={styles.primaryText}>Confirmar</Text>}
@@ -95,7 +100,7 @@ export default function ChangePassword() {
 
 type FieldProps = { label: string; value: string; onChangeText: (text: string) => void };
 
-function Field({ label, value, onChangeText }: FieldProps) {
+const Field = React.memo(function Field({ label, value, onChangeText }: FieldProps) {
   return (
     <View style={styles.fieldBlock}>
       <Text style={styles.label}>{label}</Text>
@@ -109,7 +114,7 @@ function Field({ label, value, onChangeText }: FieldProps) {
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },

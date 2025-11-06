@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,64 @@ function toMillis(ts: any) {
 }
 
 const DOTS = ['#A6FF00', '#FF6B6B', '#7AD7FF', '#FFD166', '#C084FC'];
+
+function formatHour(date: Date) {
+  const hours = date.getHours().toString().padStart(2, '0');
+  return `${hours}:00`;
+}
+
+function groupByHour(readings: Lectura[]) {
+  if (!readings.length) {
+    return { labels: [] as string[], pulsoSeries: [] as number[], oxigenoSeries: [] as number[], distanceSeries: [] as number[] };
+  }
+
+  const sorted = [...readings].sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
+  const buckets = new Map<number, { time: Date; pulsoSum: number; pulsoCount: number; oxiSum: number; oxiCount: number; distance: number }>();
+  let previousDistance: number | null = null;
+
+  sorted.forEach((entry) => {
+    const ms = toMillis(entry.timestamp);
+    if (!ms) return;
+    const hourDate = new Date(ms);
+    hourDate.setMinutes(0, 0, 0);
+    const key = hourDate.getTime();
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = { time: hourDate, pulsoSum: 0, pulsoCount: 0, oxiSum: 0, oxiCount: 0, distance: 0 };
+      buckets.set(key, bucket);
+    }
+
+    if (typeof entry.pulso === 'number') {
+      bucket.pulsoSum += entry.pulso;
+      bucket.pulsoCount += 1;
+    }
+    if (typeof entry.oxigeno === 'number') {
+      bucket.oxiSum += entry.oxigeno;
+      bucket.oxiCount += 1;
+    }
+
+    if (typeof entry.distancia === 'number') {
+      const currentDistance = entry.distancia;
+      let delta = currentDistance;
+      if (previousDistance !== null) {
+        delta = currentDistance >= previousDistance ? currentDistance - previousDistance : currentDistance;
+      }
+      bucket.distance += Math.max(0, Number(delta.toFixed(2)));
+      previousDistance = currentDistance;
+    }
+  });
+
+  const grouped = Array.from(buckets.values()).sort((a, b) => a.time.getTime() - b.time.getTime());
+  // Limit to latest 12 hours to keep chart legible
+  const recent = grouped.slice(-12);
+
+  return {
+    labels: recent.map((bucket) => formatHour(bucket.time)),
+    pulsoSeries: recent.map((bucket) => (bucket.pulsoCount ? Number((bucket.pulsoSum / bucket.pulsoCount).toFixed(1)) : 0)),
+    oxigenoSeries: recent.map((bucket) => (bucket.oxiCount ? Number((bucket.oxiSum / bucket.oxiCount).toFixed(1)) : 0)),
+    distanceSeries: recent.map((bucket) => Number(bucket.distance.toFixed(2))),
+  };
+}
 
 export default function Estadisticas() {
   const insets = useSafeAreaInsets();
@@ -50,9 +108,7 @@ export default function Estadisticas() {
     return () => { off(); if (detach) detach(); };
   }, []);
 
-  const labels = lecturas.map((l, i) => (i % 4 === 0 ? new Date(toMillis(l.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''));
-  const pulso = lecturas.map(l => l.pulso ?? 0);
-  const oxi = lecturas.map(l => l.oxigeno ?? 0);
+  const { labels, pulsoSeries, oxigenoSeries, distanceSeries } = useMemo(() => groupByHour(lecturas), [lecturas]);
   const last = lecturas.length ? lecturas[lecturas.length - 1] : undefined;
   const bpm = last ? last.pulso : 60;
   const bpmGood = bpm >= 60 && bpm <= 100;
@@ -92,7 +148,7 @@ export default function Estadisticas() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.h1}>Estadísticas</Text>
+          <Text style={styles.h1}>Estadisticas</Text>
           <View style={[styles.headerIcon, { backgroundColor: profileIcon.color || '#2B2B2E' }]}>
             <Ionicons name={profileIcon.name || 'person'} size={18} color="#111" />
           </View>
@@ -100,9 +156,9 @@ export default function Estadisticas() {
 
         <View style={[styles.card, styles.chartCard]} onLayout={({ nativeEvent }) => setChartWidth(nativeEvent.layout.width - 24)}>
           <Text style={styles.cardTitle}>Pulso</Text>
-          {pulso.length > 1 ? (
+          {pulsoSeries.length > 1 ? (
             <LineChart
-              data={{ labels, datasets: [{ data: pulso, color: (o = 1) => `rgba(166,255,0,${o})` }] }}
+              data={{ labels, datasets: [{ data: pulsoSeries, color: (o = 1) => `rgba(166,255,0,${o})` }] }}
               width={Math.max(0, chartWidth)}
               height={180}
               bezier
@@ -118,10 +174,10 @@ export default function Estadisticas() {
         </View>
 
         <View style={[styles.card, styles.chartCard]} onLayout={({ nativeEvent }) => setChartWidth(nativeEvent.layout.width - 24)}>
-          <Text style={styles.cardTitle}>Oxígeno</Text>
-          {oxi.length > 1 ? (
+          <Text style={styles.cardTitle}>Oxigeno</Text>
+          {oxigenoSeries.length > 1 ? (
             <LineChart
-              data={{ labels, datasets: [{ data: oxi, color: (o = 1) => `rgba(122,215,255,${o})` }] }}
+              data={{ labels, datasets: [{ data: oxigenoSeries, color: (o = 1) => `rgba(122,215,255,${o})` }] }}
               width={Math.max(0, chartWidth)}
               height={180}
               bezier
@@ -133,6 +189,29 @@ export default function Estadisticas() {
             />
           ) : (
             <Text style={styles.empty}>Sin datos recientes</Text>
+          )}
+        </View>
+
+        <View style={[styles.card, styles.chartCard]} onLayout={({ nativeEvent }) => setChartWidth(nativeEvent.layout.width - 24)}>
+          <Text style={styles.cardTitle}>Distancia</Text>
+          {distanceSeries.length > 0 && distanceSeries.some((value) => value > 0) ? (
+            <LineChart
+              data={{ labels, datasets: [{ data: distanceSeries, color: (o = 1) => `rgba(255,214,102,${o})` }] }}
+              width={Math.max(0, chartWidth)}
+              height={180}
+              bezier
+              withDots
+              withInnerLines
+              fromZero
+              chartConfig={{
+                ...chartConfig,
+                color: (o = 1) => `rgba(255,214,102,${o})`,
+                propsForDots: { r: '3', strokeWidth: '2', stroke: '#FFD166' },
+              }}
+              style={{ borderRadius: 16, alignSelf: 'center' }}
+            />
+          ) : (
+            <Text style={styles.empty}>Sin datos de distancia</Text>
           )}
         </View>
 
@@ -194,3 +273,4 @@ const styles = StyleSheet.create({
   rowSub: { color: '#9E9EA0', fontSize: 12, fontFamily: fonts.regular },
   link: { color: 'white', opacity: 0.9, fontSize: 12, fontFamily: fonts.regular },
 });
+
