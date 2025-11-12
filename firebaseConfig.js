@@ -1,7 +1,7 @@
-// Configuración para la conexión a Firebase
 import { initializeApp } from "firebase/app";
+import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
-import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDQuDInfRuFi8Hw1ZuSW71N7HnJrQn47xo",
@@ -15,18 +15,20 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-let auth;
+const db = getDatabase(app); 
+
+let auth; // Declaración simple de variable (permite que sea 'any' en JS)
+
 try {
   // Usar persistencia nativa si AsyncStorage está disponible
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const ReactNativeAsyncStorage = require('@react-native-async-storage/async-storage').default;
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   });
 } catch (e) {
-  // Fallback en memoria si no está instalado el paquete
   auth = getAuth(app);
+  console.error("Error al inicializar Auth con persistencia nativa:", e);
 }
 
-export { db, auth };
+// Exportamos auth y db
+export { auth, db };

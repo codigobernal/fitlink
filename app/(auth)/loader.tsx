@@ -1,22 +1,22 @@
-import { StatusBar } from "expo-status-bar";
-import { Image, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { router } from "expo-router";
+import React, { useEffect } from "react";
+import { Image, SafeAreaView, StyleSheet, View } from "react-native";
 
-export default function Landing() {
-  const { width } = useWindowDimensions();
+export default function LoadingScreen() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace("/(auth)/main");
+    }, 1500);
 
-  const imageSize = Math.min(width * 0.7, 400); // máximo 300px
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar style="light" />
       <View style={styles.container}>
         <Image
-          source={require("../../assets/images/logo.png")}
-          style={{
-            width: imageSize,
-            height: imageSize,
-            resizeMode: "contain",
-          }}
+          source={require("../../assets/images/loader.gif")} // coloca tu gif aquí
+          style={{ width: 120, height: 120, resizeMode: "contain" }}
         />
       </View>
     </SafeAreaView>
@@ -30,7 +30,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
   },

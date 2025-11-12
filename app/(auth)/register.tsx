@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
 import AuthBackground from '@/components/auth/AuthBackground';
-import { auth, db } from '../../firebaseConfig';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts } from '../../constants/fonts';
+import { auth, db } from '../../firebaseConfig';
 
 export default function Register() {
   const insets = useSafeAreaInsets();
@@ -52,7 +52,7 @@ export default function Register() {
         profileIcon: { name: 'person', color: '#A6FF00' },
         theme: { accent: '#A6FF00' },
       });
-      router.replace('/(auth)/connect');
+      router.replace('/(auth)/metrics');
     } catch (e: any) {
       const msg = mapFirebaseError(e?.code) || 'Ocurrió un error al registrar';
       setError(msg);
@@ -102,7 +102,7 @@ function mapFirebaseError(code?: string): string | null {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scrollCentered: { padding: 20, paddingTop: 24, flexGrow: 1, justifyContent: 'center' },
-  title: { color: 'white', fontFamily: fonts.semibold, fontSize: 32, marginTop: 10, marginBottom: 10 },
+  title: { color: 'white', fontWeight: 'bold', fontSize: 32, marginTop: 10, marginBottom: 10, alignSelf: 'center' },
   card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16 },
   label: { color: 'white', fontFamily: fonts.semibold, marginBottom: 10 },
   input: { borderWidth: 1, borderColor: 'white', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, color: 'white', fontFamily: fonts.regular },

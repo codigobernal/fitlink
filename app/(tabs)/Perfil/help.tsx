@@ -1,8 +1,8 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { fonts } from '../../../constants/fonts';
 
 export default function Help() {
@@ -82,5 +82,13 @@ const styles = StyleSheet.create({
   h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18 },
   body: { color: 'white', fontFamily: fonts.regular, fontSize: 13, lineHeight: 19 },
+  listContainer: { paddingLeft: 3, marginBottom: 3, marginTop: 8 },
+  listItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6, paddingLeft: 16 },
+  bullet: { fontSize: 18, lineHeight: 20, marginRight: 8 },
+  bulletText: { flex: 1, fontSize: 13, lineHeight: 20, color: 'white', fontFamily: fonts.regular },
+  h4: { color: 'white', fontSize: 16, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
+  italicsText: { fontStyle: 'italic' },
+  updateText: { fontStyle: 'italic', fontSize: 11, color: '#D2C3C3' },
+  boldText: { fontWeight: 'bold' },
 });
 

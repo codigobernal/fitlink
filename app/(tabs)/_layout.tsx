@@ -5,10 +5,10 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { fonts } from '../../constants/fonts';
-import { auth, db } from '../../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { onValue, ref } from 'firebase/database';
+import { fonts } from '../../constants/fonts';
+import { auth, db } from '../../firebaseConfig';
 
 const INACTIVE_CIRCLE = '#3A3A3C';
 
@@ -49,7 +49,7 @@ export default function TabLayout() {
     return () => off();
   }, []);
   const bottomPad = Math.max(6, insets.bottom);
-  const height = 56 + bottomPad; // keep compact, avoid home indicator overlap
+  const height = 60 + bottomPad; // keep compact, avoid home indicator overlap
   return (
     <Tabs
       screenOptions={{

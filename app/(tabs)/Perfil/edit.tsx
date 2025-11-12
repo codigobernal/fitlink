@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { onValue, ref, update } from 'firebase/database';
-import { auth, db } from '../../../firebaseConfig';
-import { useAuth } from '../../../context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts } from '../../../constants/fonts';
+import { useAuth } from '../../../context/AuthContext';
+import { auth, db } from '../../../firebaseConfig';
 
 const COLORS = ['#A6FF00', '#7AD7FF', '#FF6B6B', '#FFD166', '#C084FC', '#34C759', '#0A84FF', '#FF9F0A'] as const;
 const ICONS = ['person', 'happy', 'walk', 'run', 'bicycle', 'football', 'pulse', 'map', 'navigate', 'shield-checkmark', 'star', 'heart'] as const;
@@ -89,10 +89,10 @@ export default function EditProfile() {
           <Text style={styles.h1}><Text style={styles.boldText}>Perfil</Text></Text>
         </View>
 
-        <View style={styles.card}>
+        k<View style={styles.card}>
           <View style={styles.avatarWrap}>
             <View style={[styles.avatar, { backgroundColor: color }]}>
-              <Ionicons name={icon} size={36} color="#111" />
+              <Ionicons name={icon} size={60} color="#111" />
             </View>
           </View>
 
@@ -126,7 +126,7 @@ export default function EditProfile() {
                 ]}
               >
                 <View style={styles.iconCircle}>
-                  <Ionicons name={name} size={18} color="#CFCFCF" />
+                  <Ionicons name={name} size={20} color="#CFCFCF" />
                 </View>
               </Pressable>
             ))}

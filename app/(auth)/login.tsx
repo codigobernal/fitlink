@@ -80,7 +80,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scrollCentered: { padding: 20, paddingTop: 24, flexGrow: 1, justifyContent: 'center' },
-  title: { color: 'white', fontFamily: fonts.semibold, fontSize: 32, marginTop: 10, marginBottom: 10 },
+  title: { color: 'white', fontWeight: 'bold', fontSize: 32, marginTop: 10, marginBottom: 10, alignSelf: 'center' },
   card: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16 },
   label: { color: 'white', fontFamily: fonts.semibold,  marginBottom: 10 },
   input: { borderWidth: 1, borderColor: 'white', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, color: 'white', fontFamily: fonts.regular },

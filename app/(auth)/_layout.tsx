@@ -6,8 +6,8 @@ export default function AuthLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
-      <Stack.Screen name="photo" />
-      <Stack.Screen name="connect" />
+      <Stack.Screen name="gps" />
+      <Stack.Screen name="metrics" />
       <Stack.Screen name="main" />
     </Stack>
   );

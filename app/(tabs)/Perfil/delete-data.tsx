@@ -2,48 +2,42 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { deleteUser, getAuth } from 'firebase/auth';
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { auth } from '../../../firebaseConfig';
 import { fonts } from '../../../constants/fonts';
+import { auth } from '../../../firebaseConfig';
 
 export default function DeleteData() {
   const [confirm, setConfirm] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const enabled = confirm === 'ELIMINAR';
   const currentEmail = useMemo(() => auth.currentUser?.email ?? '', []);
 
   const handleDeleteAccount = async () => {
     try {
+      setLoading(true);
       const authInstance = getAuth();
       const user = authInstance.currentUser;
       if (user) {
         await deleteUser(user);
-        Alert.alert('Cuenta eliminada', 'Tu cuenta ha sido eliminada correctamente.');
+        setModalVisible(false);
         router.replace('/(auth)');
       }
     } catch (error: any) {
       console.error('Error al eliminar la cuenta:', error);
-      if (error?.code === 'auth/requires-recent-login') {
-        Alert.alert(
-          'Vuelve a iniciar sesión',
-          'Por seguridad necesitamos que vuelvas a iniciar sesión antes de eliminar tu cuenta.'
-        );
-      } else {
-        Alert.alert('Error', 'No se pudo eliminar la cuenta. Inténtalo nuevamente.');
-      }
+      setModalVisible(false);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleConfirmPress = () => {
-    if (!enabled) return;
-    Alert.alert(
-      'Confirmar eliminación',
-      'Se eliminará tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: handleDeleteAccount },
-      ]
-    );
   };
 
   return (
@@ -79,7 +73,7 @@ export default function DeleteData() {
           </Text>
           <Pressable
             disabled={!enabled}
-            onPress={handleConfirmPress}
+            onPress={() => enabled && setModalVisible(true)}
             style={({ pressed }) => [
               styles.primaryBtn,
               { opacity: enabled ? (pressed ? 0.9 : 1) : 0.4 },
@@ -97,7 +91,42 @@ export default function DeleteData() {
           </View>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Modal de confirmación */}
+      <Modal
+          transparent
+          animationType="fade"
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>Confirmar eliminación</Text>
+              <Text style={[styles.modalText, { fontWeight: 'normal', fontSize: 14, marginBottom: 25 }]}>
+                Se eliminará tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.
+              </Text>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, styles.modalConfirmButton]}
+                  onPress={handleDeleteAccount}
+                  disabled={loading}
+                >
+                  <Text style={styles.modalConfirmButtonText}>
+                    {loading ? 'Eliminando...' : 'Eliminar'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
   );
 }
 
@@ -105,7 +134,14 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  h1: { color: 'white', fontSize: 32, fontFamily: fonts.semibold, marginTop: 10, marginBottom: 10 },
+  h1: {
+    color: 'white',
+    fontSize: 32,
+    fontFamily: fonts.semibold,
+    marginTop: 10,
+    marginBottom: 10,
+    marginLeft: 8,
+  },
   card: { backgroundColor: '#1C1C1E', borderRadius: 18, padding: 20 },
   body: { color: 'white', fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
   input: {
@@ -130,5 +166,49 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#111', fontFamily: fonts.semibold, fontSize: 16 },
   boldText: { fontWeight: 'bold' },
-});
 
+  // Modal
+  modalOverlay: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  modalContent: {
+    backgroundColor: '#1e1e1e',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '85%',
+  },
+  modalText: {
+    color: 'white',
+    fontSize: 16,
+    marginBottom: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButton: {
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  modalConfirmButton: {
+    backgroundColor: '#FF3B30', // rojo para eliminar
+  },
+  modalCancelButton: {
+    backgroundColor: '#444',
+  },
+  modalConfirmButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalCancelButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});

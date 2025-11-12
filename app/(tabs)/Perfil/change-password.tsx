@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
-import { useAuth } from '../../../context/AuthContext';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { fonts } from '../../../constants/fonts';
-
+import { useAuth } from '../../../context/AuthContext';
+ 
 export default function ChangePassword() {
   const { user } = useAuth();
   const [current, setCurrent] = useState('');
@@ -14,7 +14,7 @@ export default function ChangePassword() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
+ 
   const validatePasswords = (): string | null => {
     if (next.length < 8) return 'La nueva contraseña debe tener al menos 8 caracteres';
     if (!/[A-Z]/.test(next)) return 'Debe incluir al menos una letra mayúscula';
@@ -24,25 +24,25 @@ export default function ChangePassword() {
     if (next !== confirm) return 'Las contraseñas no coinciden';
     return null;
   };
-
+ 
   const onSubmit = async () => {
     const validationError = validatePasswords();
     if (validationError) { setError(validationError); return; }
-
+ 
     setError(null);
     setSuccess(null);
     setLoading(true);
-
+ 
     try {
       const auth = getAuth();
       const currentUser = auth.currentUser;
       const email = user?.email ?? currentUser?.email ?? null;
       if (!currentUser || !email) throw new Error('No se encontró usuario autenticado.');
-
+ 
       const credential = EmailAuthProvider.credential(email, current);
       await reauthenticateWithCredential(currentUser, credential);
       await updatePassword(currentUser, next);
-
+ 
       setSuccess('Tu contraseña se actualizó correctamente.');
       setCurrent('');
       setNext('');
@@ -60,7 +60,7 @@ export default function ChangePassword() {
       setLoading(false);
     }
   };
-
+ 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -70,7 +70,7 @@ export default function ChangePassword() {
           </Pressable>
           <Text style={styles.h1}><Text style={styles.boldText}>Modificar contraseña</Text></Text>
         </View>
-
+ 
         <View style={styles.card}>
           <Field label="Ingrese su contraseña actual:" value={current} onChangeText={setCurrent} />
           <Field label="Contraseña nueva:" value={next} onChangeText={setNext} />
@@ -92,9 +92,9 @@ export default function ChangePassword() {
     </SafeAreaView>
   );
 }
-
+ 
 type FieldProps = { label: string; value: string; onChangeText: (text: string) => void };
-
+ 
 function Field({ label, value, onChangeText }: FieldProps) {
   return (
     <View style={styles.fieldBlock}>
@@ -110,7 +110,7 @@ function Field({ label, value, onChangeText }: FieldProps) {
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'black' },
   scroll: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24 },
