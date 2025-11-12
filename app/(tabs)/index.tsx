@@ -607,6 +607,7 @@ export default function Home() {
           <Text style={styles.switcherTitle}>{formatDay(selectedDate)}</Text>
           <Ionicons name="chevron-forward" size={20} color="#FFFFFF" onPress={() => setDayOffset((n) => Math.max(0, n - 1))} />
         </View>
+        
 
         {statItems.map((s, i) => (
           <View key={i} style={[styles.cardLarge, { flexDirection: 'row', alignItems: 'center', padding: 12 }]}>

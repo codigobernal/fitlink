@@ -78,11 +78,11 @@ export default function ChangePassword() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {success ? <Text style={styles.success}>{success}</Text> : null}
           <Pressable
-            disabled={!current || !next || !confirm || loading}
+            disabled={submitDisabled}
             onPress={onSubmit}
             style={({ pressed }) => [
               styles.primaryBtn,
-              { opacity: current && next && confirm ? (pressed ? 0.9 : 1) : 0.4 },
+              { opacity: submitDisabled ? 0.4 : pressed ? 0.9 : 1 },
             ]}
           >
             {loading ? <ActivityIndicator color="#111" /> : <Text style={styles.primaryText}>Confirmar</Text>}
