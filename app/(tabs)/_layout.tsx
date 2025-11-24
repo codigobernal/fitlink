@@ -8,7 +8,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { onAuthStateChanged } from 'firebase/auth';
 import { onValue, ref } from 'firebase/database';
 import { fonts } from '../../constants/fonts';
-import { auth, db } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig.js';
 
 const INACTIVE_CIRCLE = '#3A3A3C';
 
@@ -49,7 +49,7 @@ export default function TabLayout() {
     return () => off();
   }, []);
   const bottomPad = Math.max(6, insets.bottom);
-  const height = 60 + bottomPad; // keep compact, avoid home indicator overlap
+  const height = 65 + bottomPad;
   return (
     <Tabs
       screenOptions={{
@@ -60,7 +60,7 @@ export default function TabLayout() {
           borderTopColor: '#2A2A2C',
           height,
           paddingBottom: bottomPad,
-          paddingTop: 6,
+          paddingTop: 10,
         },
         tabBarLabelStyle: { fontSize: 13, fontFamily: fonts.semibold },
         headerShown: false,
@@ -70,8 +70,6 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Inicio', tabBarIcon: circleIcon('home', accent) }} />
       <Tabs.Screen name="Estadisticas" options={{ title: 'Estadisticas', tabBarIcon: circleIcon('stats-chart', accent) }} />
       <Tabs.Screen name="Perfil" options={{ title: 'Informacion', tabBarIcon: circleIcon('information', accent) }} />
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="index copy" options={{ href: null }} />
     </Tabs>
   );
 }

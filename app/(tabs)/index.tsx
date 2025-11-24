@@ -2,14 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth';
-import { limitToLast, onValue, orderByChild, query, ref, update } from 'firebase/database';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { auth, db } from '../../firebaseConfig.js';
+
+import { limitToLast, onValue, orderByChild, push, query, ref, update } from 'firebase/database';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Image, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline, Rect, Circle as SvgCircle, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 
 import { fonts } from '../../constants/fonts';
-import { auth, db } from '../../firebaseConfig';
 
 // --- CONSTANTES GLOBALES ---
 const R_EARTH = 6371; // Radio de la Tierra en km
@@ -17,6 +18,19 @@ const ACTIVITY_FACTOR = 1.375; // Factor de actividad ligera
 
 // --- TIPOS DE DATOS ---
 type Lectura = { id: string; pulso: number; oxigeno: number; distancia: number; timestamp: any };
+type SessionSummary = {
+    id: string;
+    distanciaFinal: number;
+    tiempoFinal: number;
+    pulsoPromedio: number;
+    oxigenoPromedio: number;
+    esfuerzoFinal: number;
+    pasosTotales: number;
+    caloriasFinales: number;
+    velocidadFinal: number;
+    timestamp: number;
+    routePointsRaw: string | null; 
+};
 type FieldPoint = { x: number; y: number };
 type RoutePoint = { latitude: number; longitude: number };
 type ProfileIcon = { name?: keyof typeof Ionicons.glyphMap; color?: string };
@@ -88,67 +102,43 @@ function formatDate(d: Date): string {
   return `${day}/${month}/${year}, ${hours}:${minutes} ${ampm}`;
 }
 
-// --- LÓGICA DE CÁLCULO (Asegurando parámetros dinámicos) ---
+// --- LÓGICA DE CÁLCULO (Métricas) ---
 
-/** Calcula los pasos basándose en la distancia total de la ruta y métricas personales. */
 function calculateSteps(distanceKm: number, heightMeters: number, sex: string): number {
-  if (distanceKm <= 0 || heightMeters <= 0 || !['M', 'F'].includes(sex)) {
-    return 0;
-  }
-  // Amplitud estimada del paso: Hombres ~0.413 * altura, Mujeres ~0.415 * altura
+  if (distanceKm <= 0 || heightMeters <= 0 || !['M', 'F'].includes(sex)) return 0;
   const stepLength = sex === 'M' ? heightMeters * 0.413 : heightMeters * 0.415; 
-  return Math.round((distanceKm * 1000) / stepLength); // Pasos = Distancia en metros / Longitud de paso
+  return Math.round((distanceKm * 1000) / stepLength);
 }
 
-/** * Estima las calorías quemadas usando la Tasa Metabólica Basal (TMB) 
- * y la distancia recorrida (como factor de actividad).
- */
 function calculateCalories(age: number, weight: number, heightMeters: number, sex: string, distanceKm: number): number {
-  if (age <= 0 || weight <= 0 || heightMeters <= 0 || !['M', 'F'].includes(sex) || distanceKm <= 0) {
-    return 0;
-  }
+  if (age <= 0 || weight <= 0 || heightMeters <= 0 || !['M', 'F'].includes(sex) || distanceKm <= 0) return 0;
   
   const heightCm = heightMeters * 100;
-  let tmb = 0;
+  let tmb = sex === 'M' 
+    ? 88.362 + (13.397 * weight) + (4.799 * heightCm) - (5.677 * age)
+    : 447.593 + (9.247 * weight) + (3.098 * heightCm) - (4.330 * age);
 
-  if (sex === 'M') {
-    // Fórmula de Harris-Benedict (revisada) para hombres:
-    tmb = 88.362 + (13.397 * weight) + (4.799 * heightCm) - (5.677 * age);
-  } else if (sex === 'F') {
-    // Fórmula de Harris-Benedict (revisada) para mujeres:
-    tmb = 447.593 + (9.247 * weight) + (3.098 * heightCm) - (4.330 * age);
-  }
-
-  // Multiplicamos TMB por el Factor de Actividad para obtener el Gasto Calórico Total (GCT) diario,
-  // y lo escalamos por la distancia para una estimación más centrada en el ejercicio.
-  // Nota: Esto es una simplificación. Un cálculo más preciso usaría METs o Frecuencia Cardiaca.
-  const caloriesPerKm = (tmb * ACTIVITY_FACTOR) / 25; // Asumir 25km como referencia de actividad
+  const caloriesPerKm = (tmb * ACTIVITY_FACTOR) / 25; 
   return Math.round(caloriesPerKm * distanceKm);
 }
 
-/** * Calcula el esfuerzo físico relativo como porcentaje. 
- * Se compara la caloría estimada real con una caloría de "esfuerzo máximo teórico" para la actividad.
- */
 function calculateEffort(age: number, weight: number, heightMeters: number, sex: string, distanceKm: number, timeSeconds: number): number {
   if (distanceKm <= 0 || timeSeconds <= 0) return 0;
   
   const actualCalories = calculateCalories(age, weight, heightMeters, sex, distanceKm);
-  
-  // Asumiendo una tasa máxima teórica de quema de calorías por minuto de actividad.
-  // 1 cal/kg/min es un valor muy alto, usamos 0.15 como referencia de "máximo" para esta actividad.
   const maxCalPerMin = 0.15 * weight; 
   const maxCaloriesTheoric = maxCalPerMin * (timeSeconds / 60);
 
   let effortPercent = maxCaloriesTheoric > 0 ? (actualCalories / maxCaloriesTheoric) * 100 : 0;
 
-  // Limitar entre 0 y 100 para el display
   if (effortPercent > 100) effortPercent = 100;
   if (effortPercent < 0) effortPercent = 0;
 
   return Math.round(effortPercent);
 }
 
-/** Devuelve la etiqueta de estado de salud basada en el IMC. */
+// --- LÓGICA DE ESTADO Y COLOR ---
+
 function getBmiStatus(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return 'Sin datos';
   if (value < 18.5) return 'Bajo peso';
@@ -157,16 +147,14 @@ function getBmiStatus(value: number): string {
   return 'Obesidad';
 }
 
-/** Devuelve el color de estado de salud basada en el IMC. */
 function getBmiStatusColor(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '#9E9EA0';
-  if (value < 18.5) return '#7AD7FF'; // Azul
-  if (value < 25) return '#A6FF00'; // Verde
-  if (value < 30) return '#FFD166'; // Naranja
-  return '#FF6B6B'; // Rojo
+  if (value < 18.5) return '#7AD7FF';
+  if (value < 25) return '#A6FF00';
+  if (value < 30) return '#FFD166';
+  return '#FF6B6B';
 }
 
-/** Devuelve la etiqueta de estado de esfuerzo. */
 function getEffortStatus(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return 'Reposo';
   if (value < 20 ) return 'Muy ligero';
@@ -176,14 +164,13 @@ function getEffortStatus(value: number): string {
   return 'Máximo';
 }
 
-/** Devuelve el color de estado de esfuerzo. */
 function getEffortStatusColor(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '#9E9EA0';
-  if (value < 20 ) return '#7AD7FF'; // Azul Claro
-  if (value < 50) return '#A6FF00'; // Verde
-  if (value < 75) return '#FFD166'; // Naranja
-  if (value < 90) return '#FF6B6B'; // Rojo
-  return '#9C0000'; // Rojo Oscuro
+  if (value < 20 ) return '#7AD7FF';
+  if (value < 50) return '#A6FF00';
+  if (value < 75) return '#FFD166';
+  if (value < 90) return '#FF6B6B';
+  return '#9C0000';
 }
 
 // --- COMPONENTE PRINCIPAL HOME ---
@@ -191,81 +178,203 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   // --- VARIABLES DE ESTADO ---
-  const [lecturas, setLecturas] = useState<Lectura[]>([]);
+  const [lecturas, setLecturas] = useState<Lectura[]>([]); // Lecturas individuales del sensor (solo el último para BPM)
+  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]); // Historial de sesiones guardadas
   const [dayOffset, setDayOffset] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
+
+
   const [profileIcon, setProfileIcon] = useState<ProfileIcon>({});
   
   const [tracking, setTracking] = useState(false);
   const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
   const [elapsed, setElapsed] = useState(0); // Tiempo de actividad en segundos
+  const [routeStartTime, setRouteStartTime] = useState<number>(0); 
   
+  // Datos temporales de la sesión activa para promediar al finalizar
+  const activePulsesRef = useRef<number[]>([]);
+  const activeOxygenRef = useRef<number[]>([]);
+
   const [bmiModalVisible, setBmiModalVisible] = useState(false);
   const [bmiForm, setBmiForm] = useState<BmiForm>({ weight: '', height: '', age: '', sex: '' });
+  
+  // --- REFES ---
   const [savingBmi, setSavingBmi] = useState(false);
 
   // --- REFES ---
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const locationSubRef = useRef<{ remove: () => void } | null>(null);
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const heartScale = useRef(new Animated.Value(1)).current;
 
-  // --- CÁLCULOS MEMORIZADOS/DERIVADOS ---
+  // NUEVAS REFERENCIAS PARA ACCEDER A VALORES ACTUALES SIN USAR DEPENDENCIAS
+  const latestMetricsRef = useRef({
+      distance: 0,
+      time: 0,
+      speed: 0,
+      steps: 0,
+      effort: 0,
+      calories: 0,
+      route: [] as RoutePoint[],
+      pulses: [] as number[],
+      oxygen: [] as number[],
+  });
 
-  // Parseo y normalización de métricas personales
+  // --- CÁLCULOS MEMORIZADOS/DERIVADOS (Métricas Personales) ---
+
   const parsedWeight = parseFloat(bmiForm.weight.replace(',', '.')) || 0;
   const rawHeight = parseFloat(bmiForm.height.replace(',', '.')) || 0;
-  // Convertir altura a metros si está en cm (ej. 175 -> 1.75)
   const heightMeters = rawHeight > 5 ? rawHeight / 100 : rawHeight; 
   const parsedAge = parseInt(bmiForm.age, 10) || 0;
   const bmiSex = bmiForm.sex.trim().toUpperCase() === 'M' ? 'M' : bmiForm.sex.trim().toUpperCase() === 'F' ? 'F' : '';
 
-  // Cálculo de IMC
   const computedBmi = heightMeters > 0 ? parsedWeight / (heightMeters * heightMeters) : 0;
   const bmiDisplay = computedBmi > 0 ? computedBmi.toFixed(1) : '--';
   const bmiStatusLabel = getBmiStatus(computedBmi);
   const bmiStatusColor = getBmiStatusColor(computedBmi);
 
-  // Distancia total de la ruta en curso (useMemo para recalcular solo cuando cambia routePoints)
   const routeDistanceKm = useMemo(() => {
-    if (routePoints.length < 2) return 0; 
-    let total = 0;
-    for (let i = 1; i < routePoints.length; i++) {
-      total += haversine(routePoints[i - 1], routePoints[i]); 
-    }
-    return total;
-  }, [routePoints]);
+  if (routePoints.length < 2) return 0;
 
-  // Velocidad de la ruta en curso (km/h)
-  const currentRouteSpeed = elapsed > 0 && routeDistanceKm > 0 ? routeDistanceKm / (elapsed / 3600) : 0;
+  let totalDistance = 0;
+  for (let i = 0; i < routePoints.length - 1; i++) {
+    const a = routePoints[i];
+    const b = routePoints[i + 1];
+    if (!a || !b) continue;
+    if (!Number.isFinite(a.latitude) || !Number.isFinite(a.longitude)) continue;
+    if (!Number.isFinite(b.latitude) || !Number.isFinite(b.longitude)) continue;
+    totalDistance += haversine(a, b);
+  }
+  return totalDistance;
+}, [routePoints]);
 
-  // Pasos de la ruta en curso (se actualiza vía useEffect)
-  const [steps, setSteps] = useState(0);
 
-  // Calorías de la ruta en curso (se actualiza vía useEffect)
-  const [calories, setCalories] = useState(0);
+  const currentRouteSpeed = useMemo(() => {
+    return elapsed > 0 && routeDistanceKm > 0 ? routeDistanceKm / (elapsed / 3600) : 0;
+  }, [elapsed, routeDistanceKm]);
 
-  // Esfuerzo de la ruta en curso
-  const computedEffort = calculateEffort(parsedAge, parsedWeight, heightMeters, bmiSex, routeDistanceKm, elapsed);
-  const effortStatusLabel = getEffortStatus(computedEffort);
-  const effortStatusColor = getEffortStatusColor(computedEffort);
+
+  // Pasos y Calorías se calculan en tiempo real para la sesión actual
+  const steps = useMemo(() => calculateSteps(routeDistanceKm, heightMeters, bmiSex), [routeDistanceKm, heightMeters, bmiSex]);
+  const calories = useMemo(() => calculateCalories(parsedAge, parsedWeight, heightMeters, bmiSex, routeDistanceKm), [parsedAge, parsedWeight, heightMeters, bmiSex, routeDistanceKm]);
+  const computedEffort = useMemo(() => calculateEffort(parsedAge, parsedWeight, heightMeters, bmiSex, routeDistanceKm, elapsed), [parsedAge, parsedWeight, heightMeters, bmiSex, routeDistanceKm, elapsed]);
+
+  //const effortStatusLabel = getEffortStatus(computedEffort);
+  //const effortStatusColor = getEffortStatusColor(computedEffort);
   
-  // Datos de la última lectura para BPM y hora
+  // Datos de la última lectura del sensor (para BPM en tiempo real)
   const latest = lecturas[0];
   const bpm = latest?.pulso ?? 60;
   const lastMs = latest ? toMillis(latest.timestamp) : 0;
-  const hasRouteData = routePoints.length > 0 || elapsed > 0;
 
-  // Lecturas del día seleccionado (useMemo para optimizar)
+  // NUEVO: Obtener la ÚLTIMA sesión guardada
+  const lastSavedSession = useMemo(() => {
+      // Si NO estamos haciendo tracking, usamos la sesión más reciente del historial
+      if (!tracking && sessionSummaries.length > 0) {
+          return sessionSummaries[0];
+      }
+      return null;
+  }, [tracking, sessionSummaries]);
+
+  // NUEVO: Datos a mostrar en el mapa/tarjetas de ruta cuando NO estamos en tracking
+  // --- Datos a mostrar en el mapa/tarjetas de ruta cuando NO estamos en tracking
+const displayData = tracking
+  ? {
+      distance: routeDistanceKm,
+      time: elapsed,
+      speed: currentRouteSpeed,
+      pulses: activePulsesRef.current,
+      effort: computedEffort,
+      lastMs: lastMs,
+    }
+  : {
+      distance: lastSavedSession?.distanciaFinal || 0,
+      time: lastSavedSession?.tiempoFinal || 0,
+      speed: lastSavedSession?.velocidadFinal || 0,
+      pulses: [],
+      effort: lastSavedSession?.esfuerzoFinal || computedEffort,
+      lastMs: lastSavedSession?.timestamp ? toMillis(lastSavedSession.timestamp) : lastMs,
+    };
+
+     const displayRoutePoints: RoutePoint[] = useMemo(() => {
+      // Si estamos en tracking, mostramos la ruta en vivo
+      if (tracking) {
+          return routePoints;
+      }
+      // Si el tracking está inactivo y tenemos una sesión guardada con datos de ruta
+      if (lastSavedSession && lastSavedSession.routePointsRaw) {
+          try {
+              // Parseamos la cadena JSON guardada
+              const parsedRoute = JSON.parse(lastSavedSession.routePointsRaw);
+              if (Array.isArray(parsedRoute)) {
+                  return parsedRoute as RoutePoint[];
+              }
+          } catch (e) {
+              console.error("Error parsing saved route points:", e);
+          }
+      }
+      return [];
+  }, [tracking, routePoints, lastSavedSession]); // Dependencia en lastSavedSession
+
+
+  // La fecha mostrada en el mapa debe ser de la última sesión guardada O la última lectura.
+  const displayLastMs = useMemo(() => {
+        if (tracking) {
+            // Si estamos activos, mostramos el tiempo de inicio de la ruta.
+            return routeStartTime || Date.now(); 
+        }
+        // Si no estamos activos, mostramos la última sesión guardada o la hora actual (fallback).
+        if (lastSavedSession) {
+            return toMillis(lastSavedSession.timestamp);
+        }
+        return lastMs > 100000 ? lastMs : Date.now(); 
+    }, [tracking, routeStartTime, lastSavedSession, lastMs]);
+    
+  const displayBPM = latest?.pulso ?? 60; // Siempre mostramos el pulso en vivo.
+
+  // Lecturas del día seleccionado (usa summaries guardados)
   const selectedDate = addDays(new Date(), -dayOffset);
   const dayStart = startOfDay(selectedDate).getTime();
   const dayEnd = endOfDay(selectedDate).getTime();
   
-  const lecturasDiaAsc: Lectura[] = useMemo(() => {
-    const sameDay = lecturas.filter((l) => {
-      const ms = toMillis(l.timestamp);
+  const sessionsDia = useMemo(() => {
+    return sessionSummaries.filter(s => {
+      const ms = toMillis(s.timestamp);
       return ms >= dayStart && ms <= dayEnd;
     });
-    return sameDay.sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
-  }, [lecturas, dayStart, dayEnd]);
+  }, [sessionSummaries, dayStart, dayEnd]);
+
+
+  // --- CÁLCULOS DE RESUMEN DIARIO (USANDO SESIONES GUARDADAS) ---
+  const dailySummary = useMemo(() => {
+    if (sessionsDia.length === 0) {
+        return {
+            totalCalories: 0,
+            totalDistance: 0,
+            totalSteps: 0,
+            totalTime: 0,
+            avgSpeed: 0,
+        };
+    }
+
+    const totalDistance = sessionsDia.reduce((sum, s) => sum + s.distanciaFinal, 0);
+    const totalTime = sessionsDia.reduce((sum, s) => sum + s.tiempoFinal, 0);
+    const totalCalories = sessionsDia.reduce((sum, s) => sum + s.caloriasFinales, 0);
+    const totalSteps = sessionsDia.reduce((sum, s) => sum + s.pasosTotales, 0);
+    
+    // Calculamos la rapidez promedio basado en el tiempo total y la distancia total
+    const avgSpeed = totalTime > 0 ? totalDistance / (totalTime / 3600) : 0;
+
+    return {
+        totalCalories: Math.round(totalCalories),
+        totalDistance: totalDistance,
+        totalSteps: totalSteps,
+        totalTime: totalTime,
+        avgSpeed: avgSpeed,
+    };
+  }, [sessionsDia]);
+
 
   // --- MANEJADORES DE ESTADO Y DATOS ---
 
@@ -273,7 +382,7 @@ export default function Home() {
     setBmiForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSaveBmi = async () => {
-    // ... Lógica para guardar BMI ... (mantenida del código original)
+    // Lógica de guardado de BMI (Mantenida)
     const currentUser = auth.currentUser;
     if (!currentUser) {
       Alert.alert('Sesión expirada', 'Inicia sesión nuevamente para guardar tus datos.');
@@ -304,7 +413,8 @@ export default function Home() {
     const sexStored = payload.sex ? payload.sex[0] : '';
     try {
       setSavingBmi(true);
-      await update(ref(db, `users/${currentUser.uid}/metrics`), {
+      // CORRECCIÓN DE RUTA: users/${currentUser.uid}/metrics
+      await update(ref(db, `users/${currentUser.uid}/metrics`), { 
         age: ageStored,
         weight: weightStored,
         height: heightStored,
@@ -317,83 +427,282 @@ export default function Home() {
         sex: sexStored,
       });
       setBmiModalVisible(false);
-      Alert.alert('Guardado', 'Tus datos físicos se han actualizado.');
+      setModalTitle('Guardado');
+      setModalMessage('Tus datos físicos se han actualizado.');
+      setModalVisible(true);
+
+
     } catch (error) {
       console.error('update metrics', error);
-      Alert.alert('Error', 'No pudimos guardar tus datos. Intenta nuevamente.');
+      setModalMessage('No pudimos guardar tus datos. Intenta nuevamente.');
+      setModalVisible(true);
+
+
     } finally {
       setSavingBmi(false);
     }
   };
 
-  const startTracking = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== Location.PermissionStatus.GRANTED) {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu ubicacion para registrar la ruta.');
+  /** Guarda el resumen de la sesión de actividad física en Firebase. */
+    const saveSessionData = useCallback(
+    async (
+      distance: number,
+      time: number,
+      speed: number,
+      pulses: number[],
+      oxygen: number[],
+      stepsCount: number,
+      effort: number,
+      caloriesCount: number,
+      route: RoutePoint[]
+    ) => {
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        setModalTitle('Sesión no guardada');
+        setModalMessage('Debes iniciar sesión para guardar tus actividades.');
+        setModalVisible(true);
         return;
       }
-  
-      setRoutePoints([]);
-      setElapsed(0);
-      setTracking(true);
-  
-      timerRef.current = setInterval(() => setElapsed((prev) => prev + 1), 1000);
-  
-      locationSubRef.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 3000,
-          distanceInterval: 5,
-        },
-        (location) => {
-          setRoutePoints((prev) => [...prev, {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          }]);
-        }
-      );
-    } catch (error) {
-      console.error('startTracking', error);
-      Alert.alert('Error', 'No se pudo iniciar el seguimiento de ruta.');
-      stopTracking();
-    }
-  };
-  
-  const stopTracking = () => {
+
+      if (time < 10 && distance < 0.01) {
+        setModalTitle('Sesión no registrada');
+        setModalMessage('La actividad fue demasiado corta para ser guardada.');
+        setModalVisible(true);
+        return;
+      }
+
+      const avgPulso =
+        pulses.length > 0
+          ? Math.round(pulses.reduce((sum, p) => sum + p, 0) / pulses.length)
+          : 0;
+
+      const avgOxygen =
+        oxygen.length > 0
+          ? Math.round(oxygen.reduce((sum, o) => sum + o, 0) / oxygen.length)
+          : 0;
+
+      const sessionData = {
+        timestamp: Date.now(),
+        distanciaFinal: Number(distance.toFixed(2)),
+        tiempoFinal: time,
+        velocidadFinal: Number(speed.toFixed(2)),
+        pulsoPromedio: avgPulso,
+        oxigenoPromedio: avgOxygen,
+        pasosTotales: stepsCount,
+        esfuerzoFinal: effort,
+        caloriasFinales: caloriesCount,
+        routePoints: route.length > 100 ? null : JSON.stringify(route), // <--- Asegurar que se guarde como JSON
+      };
+
+      try {
+        const sessionRef = ref(db, `users/${currentUser.uid}/sessions`);
+        await push(sessionRef, sessionData);
+
+        setModalTitle('¡Sesión guardada!');
+        setModalMessage(
+          `Has completado ${distance.toFixed(2)} km en ${formatTime(time)}.`
+        );
+        setModalVisible(true);
+      } catch (error) {
+        console.error('Error al guardar sesión:', error);
+        setModalTitle('Error');
+        setModalMessage('No se pudo guardar la sesión de actividad.');
+        setModalVisible(true);
+      }
+    },
+    [setModalVisible, setModalMessage, setModalTitle]
+  );
+
+    const stopTracking = useCallback(async () => {
+    // Obtener valores actuales del ref
+    const currentData = latestMetricsRef.current;
+
     setTracking(false);
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
     if (locationSubRef.current) {
-      locationSubRef.current.remove();
-      locationSubRef.current = null;
+      try {
+        locationSubRef.current.remove();
+      } catch (err) {
+        console.warn('Error removing location subscription', err);
+      } finally {
+        locationSubRef.current = null;
+      }
     }
-  };
-  
-  const toggleTracking = () => {
-    if (tracking) stopTracking();
-    else startTracking();
-  };
+
+    // Guardar sesión si hubo actividad
+    if (currentData.time > 0 || currentData.distance > 0) {
+      await saveSessionData(
+        currentData.distance,
+        currentData.time,
+        currentData.speed,
+        currentData.pulses,
+        currentData.oxygen,
+        currentData.steps,
+        currentData.effort,
+        currentData.calories,
+        currentData.route
+      );
+    }
+
+    // Reset
+    activePulsesRef.current = [];
+    activeOxygenRef.current = [];
+    setRoutePoints([]);
+    setElapsed(0);
+  }, [
+    activePulsesRef,
+    activeOxygenRef,
+    saveSessionData,
+    setTracking,
+    setRoutePoints,
+    setElapsed,
+  ]);
+
+  const startTracking = useCallback(
+  async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== Location.PermissionStatus.GRANTED) {
+        setModalTitle('Permiso requerido');
+        setModalMessage('Necesitamos acceso a tu ubicación para registrar la ruta.');
+        setModalVisible(true);
+        return;
+      }
+
+      setRoutePoints([]);
+      setElapsed(0);
+
+      activePulsesRef.current = [];
+      activeOxygenRef.current = [];
+
+      setTracking(true);
+
+      timerRef.current = setInterval(
+        () => setElapsed((prev) => prev + 1),
+        1000
+      );
+
+      locationSubRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Highest,
+          distanceInterval: 1,
+          timeInterval: 1000,
+        },
+        (location) => {
+          if (!location || !location.coords) return;
+
+          const { latitude, longitude } = location.coords;
+
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+          setRoutePoints((prev) => {
+            const last = prev[prev.length - 1];
+
+            if (last) {
+              const sameLat = Math.abs(last.latitude - latitude) < 1e-6;
+              const sameLon = Math.abs(last.longitude - longitude) < 1e-6;
+
+              if (sameLat && sameLon) return prev;
+            }
+
+            return [...prev, { latitude, longitude }];
+          });
+        }
+      );
+    } catch (error) {
+      console.error('startTracking', error);
+
+      setModalTitle('Error');
+      setModalMessage('No se pudo iniciar el seguimiento de ruta.');
+      setModalVisible(true);
+
+      stopTracking();
+    }
+  },
+  [stopTracking, setRoutePoints, setElapsed, setTracking]
+);
+
+    const toggleTracking = () => {
+        if (tracking) stopTracking();
+        else startTracking();
+    };
 
 
   // --- USE EFFECTS ---
 
-  // 1. Efecto para obtener lecturas de la base de datos (pulso, oxigeno, etc.)
+  // 1. Efecto para obtener lecturas del sensor (solo el último para BPM y oxígeno)
   useEffect(() => {
-    const q = query(ref(db, 'lecturas'), orderByChild('timestamp'), limitToLast(500));
+    // Limitamos a 1 para obtener la lectura más reciente
+    const q = query(ref(db, 'lecturas'), orderByChild('timestamp'), limitToLast(1));
     const unsub = onValue(q, (snap) => {
       const data = snap.val();
       if (!data) return setLecturas([]);
       const arr: Lectura[] = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
       arr.sort((a, b) => toMillis(b.timestamp) - toMillis(a.timestamp));
-      setLecturas(arr);
+      setLecturas(arr); // Última lectura
+
+      // Capturar pulso y oxígeno para la sesión activa
+      if (tracking && arr.length > 0) {
+      const latestReading = arr[0];
+
+      if (latestReading.pulso && latestReading.pulso > 0) {
+        activePulsesRef.current.push(latestReading.pulso);
+      }
+      if (latestReading.oxigeno && latestReading.oxigeno > 0) {
+        activeOxygenRef.current.push(latestReading.oxigeno);
+      }
+    }
     });
     return () => unsub();
+  }, [tracking]);
+
+  // 2. Efecto para obtener el historial de SESIONES del usuario
+  useEffect(() => {
+    let detachSessions: undefined | (() => void);
+    
+    const off = onAuthStateChanged(auth, (user) => {
+        if (detachSessions) { detachSessions(); detachSessions = undefined; }
+        if (!user) { setSessionSummaries([]); return; }
+        
+        // CORRECCIÓN DE RUTA: Escucha el nodo 'sessions'
+        const sessionsRef = query(ref(db, `users/${user.uid}/sessions`), orderByChild('timestamp'), limitToLast(50));
+        detachSessions = onValue(sessionsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return setSessionSummaries([]);
+            
+            const summaries: SessionSummary[] = Object.keys(data).map(key => ({
+                id: key,
+                timestamp: data[key].timestamp,
+                distanciaFinal: data[key].distanciaFinal || 0,
+                tiempoFinal: data[key].tiempoFinal || 0,
+                pulsoPromedio: data[key].pulsoPromedio || 0,
+                oxigenoPromedio: data[key].oxigenoPromedio || 0,
+                esfuerzoFinal: data[key].esfuerzoFinal || 0,
+                pasosTotales: data[key].pasosTotales || 0,
+                caloriasFinales: data[key].caloriasFinales || 0,
+                velocidadFinal: data[key].velocidadFinal || 0,
+                routePointsRaw: data[key].routePoints || null, 
+            }));
+            // Ordenar por más reciente primero
+            summaries.sort((a, b) => toMillis(b.timestamp) - toMillis(a.timestamp));
+            setSessionSummaries(summaries);
+        });
+    });
+
+    return () => {
+      off();
+      if (detachSessions) detachSessions();
+    };
   }, []);
 
-  // 2. Efecto para escuchar cambios de usuario y métricas personales
+  // 3. Efecto para escuchar cambios de métricas personales (BMI) y perfil
   useEffect(() => {
     let detachIcon: undefined | (() => void);
     let detachMetrics: undefined | (() => void);
@@ -431,26 +740,8 @@ export default function Home() {
       if (detachMetrics) detachMetrics();
     };
   }, []);
-
-  // 3. Efecto para calcular Pasos (depende de la distancia de la ruta y métricas personales)
-  useEffect(() => {
-    const pasosEstimados = calculateSteps(routeDistanceKm, heightMeters, bmiSex);
-    setSteps(pasosEstimados);
-  }, [routeDistanceKm, heightMeters, bmiSex]);
   
-  // 4. Efecto para calcular Calorías (depende de la distancia de la ruta y métricas personales)
-  useEffect(() => {
-    const caloriasEstimadas = calculateCalories(
-      parsedAge,
-      parsedWeight,
-      heightMeters,
-      bmiSex,
-      routeDistanceKm
-    );
-    setCalories(caloriasEstimadas);
-  }, [routeDistanceKm, parsedAge, parsedWeight, heightMeters, bmiSex]);
-
-  // 5. Efecto para animar el icono del corazón (latido)
+  // 4. Efecto para animar el icono del corazón (latido)
   useEffect(() => {
     const bpmGood = bpm >= 60 && bpm <= 100;
     const clamped = Math.max(40, Math.min(160, bpm || 60));
@@ -467,18 +758,48 @@ export default function Home() {
     return () => anim.stop();
   }, [bpm, heartScale]);
 
-  // 6. Limpieza al desmontar
-  useEffect(() => () => stopTracking(), []);
+  // 5. Limpieza al desmontar
+  useEffect(() => {
+    return () => {
+        // CORRECCIÓN: Llamamos a la función asíncrona sin usar 'await' en el cleanup return
+        stopTracking(); 
+    };
+  }, [stopTracking]); // El linter sigue pidiendo 'stopTracking' aquí, lo cual es correcto.
 
-  // --- DATOS PARA LA VISTA ---
+// NUEVO: Sincroniza la referencia con los valores calculados/estado en cada render
+useEffect(() => {
+    latestMetricsRef.current = {
+        distance: routeDistanceKm,
+        time: elapsed,
+        speed: currentRouteSpeed,
+        steps: steps,
+        effort: computedEffort,
+        calories: calories,
+        route: routePoints,
+        pulses: activePulsesRef.current,
+        oxygen: activeOxygenRef.current,
+    };
+});
 
-  const statItems = [
-    { c: '#FF9F0A', t: 'Calorías', v: calories > 0 ? `${Math.round(calories)} Kcal` : '0 Kcal', vc: '#FF9F0A', iconName: 'flame' },
-    { c: '#8c44ffff', t: 'Distancia', v: routeDistanceKm > 0 ? `${routeDistanceKm.toFixed(2)} km` : '0 km', vc: '#C084FC', iconName: 'walk' },
-    { c: '#50d8fdff', t: 'Pasos', v: steps > 0 ? `${steps}` : '0', vc: '#50d8fdff', iconName: 'footsteps' },
-    { c: '#42c700ff', t: 'Rapidez', v: currentRouteSpeed > 0 ? `${currentRouteSpeed.toFixed(2)} km/h` : '0 km/h', vc: '#42c700ff', iconName: 'speedometer' },
-    { c: '#9c0000ff', t: 'Tiempo de actividad', v: elapsed > 0 ? `${formatTime(elapsed)}` : '0:00', vc: '#bf0101ff', iconName: 'time' },
-  ];
+  // --- DATOS PARA LA VISTA (Usando el resumen diario) ---
+
+  type IconNames = 'flame' | 'walk' | 'footsteps' | 'speedometer' | 'time' | 'person' | 'create' | 'chevron-back' | 'chevron-forward';
+
+  type StatItem = {
+    c: string; // color
+    t: string; // texto
+    v: string; // valor
+    vc: string; // color de valor
+    iconName: IconNames; // ⬅️ Usamos el tipo estricto aquí
+};
+
+  const statItems: StatItem[] = [ 
+    { c: '#FF9F0A', t: 'Calorías quemadas', v: dailySummary.totalCalories > 0 ? `${dailySummary.totalCalories} Kcal` : '0 Kcal', vc: '#FF9F0A', iconName: 'flame' },
+    { c: '#8c44ffff', t: 'Distancia', v: dailySummary.totalDistance > 0 ? `${Number(dailySummary.totalDistance).toFixed(2)} km` : '0 km', vc: '#C084FC', iconName: 'walk' },
+    { c: '#50d8fdff', t: 'Pasos', v: dailySummary.totalSteps > 0 ? `${dailySummary.totalSteps}` : '0', vc: '#50d8fdff', iconName: 'footsteps' },
+    { c: '#42c700ff', t: 'Rapidez', v: dailySummary.avgSpeed > 0 ? `${Number(dailySummary.avgSpeed).toFixed(2)} km/h` : '0 km/h', vc: '#42c700ff', iconName: 'speedometer' },
+    { c: '#9c0000ff', t: 'Tiempo de actividad', v: dailySummary.totalTime > 0 ? `${formatTime(dailySummary.totalTime)}` : '0:00', vc: '#bf0101ff', iconName: 'time' },
+];
 
   const timeDisplay = formatTime(elapsed);
   
@@ -496,7 +817,7 @@ export default function Home() {
         </View>
 
         <View style={[styles.cardSmall, { padding: 0, overflow: 'hidden' }]}>
-          <Image source={require('../../assets/elements/prom2.gif')} style={styles.demoImage} resizeMode="cover" />
+          <Image source={require('../../assets/elements/prom4.gif')} style={styles.demoImage} resizeMode="cover" />
         </View>
 
         {/* --- DATOS PERSONALES / BMI --- */}
@@ -557,57 +878,88 @@ export default function Home() {
 
         {/* --- MAPA Y DETALLES DE RUTA / PULSO --- */}
         <View style={[styles.cardLarge, { padding: 12 }]}>
-          <Text style={styles.cardTitle}>Mapa de rutas</Text>
-          <Text style={styles.rowSub}>Última lectura: {formatDate(new Date(lastMs))}</Text>
-          <View style={styles.pitchWrap}>
-            <RouteMap points={routePoints} />
+        <Text style={styles.cardTitle}>Mapa de rutas</Text>
+
+        {/* AHORA MUESTRA LA FECHA DE LA ÚLTIMA LECTURA O SESIÓN GUARDADA */}
+        <Text style={[styles.rowSub, { marginBottom: 8 }]}>
+          Última actividad: {formatDate(new Date(displayLastMs))}
+        </Text>
+
+        <View style={styles.pitchWrap}>
+           <RouteMap points={displayRoutePoints} /> 
+        </View>
+
+        {routePoints.length === 0 && !lastSavedSession ? ( 
+          <Text style={[styles.rowSub, { marginTop: 8 }]}>
+            Activa <Text style={styles.italicText}>Iniciar ruta</Text> para comenzar a registrar tu recorrido.
+          </Text>
+      ) : null}
+
+        {/* Tarjetas de Datos de la Ruta/Sesión */}
+        <View
+          style={{
+            backgroundColor: 'rgba(28,28,30,1.00)',
+            borderRadius: 12,
+            padding: 0,
+            marginTop: 12,
+          }}
+        >
+          <Text style={styles.rowTitle}>Datos de la ruta</Text>
+
+          <View style={styles.bmiRow}>
+            <View style={styles.bmiItem}>
+              <Text style={styles.bmiLabel}>Distancia</Text>
+
+              {/* Muestra datos EN VIVO si tracking es true, sino muestra la última sesión guardada */}
+              <Text style={styles.bmiValue}>
+                {Number(displayData.distance || 0).toFixed(2)} km 
+              </Text>
+            </View>
+
+            <View style={styles.bmiItem}>
+              <Text style={styles.bmiLabel}>Tiempo</Text>
+              <Text style={styles.bmiValue}>{formatTime(displayData.time)}</Text>
+            </View>
           </View>
-          {routePoints.length === 0 ? (
-            <Text style={[styles.rowSub, { marginTop: 8 }]}>
-              Activa <Text style={styles.italicText}>Iniciar ruta</Text> para comenzar a registrar tu recorrido.
-            </Text>
-          ) : null}
-          <View style={{ backgroundColor: 'rgba(28,28,30,1.00)', borderRadius: 12, padding: 0, marginTop: 12 }}>
-            {/* Si hay datos de ruta o de última lectura (latest) */}
-            <Text style={styles.rowTitle}>Datos de la ruta</Text>
-            <View style={styles.bmiRow}>
-              <View style={styles.bmiItem}>
-                <Text style={styles.bmiLabel}>Distancia</Text>
-                <Text style={styles.bmiValue}>{routeDistanceKm.toFixed(2)} km</Text>
-              </View>
-              <View style={styles.bmiItem}>
-                <Text style={styles.bmiLabel}>Tiempo</Text>
-                <Text style={styles.bmiValue}>{timeDisplay}</Text>
+
+          <View style={styles.bmiRow2}>
+            <View style={styles.bmiItem}>
+              <Text style={styles.bmiLabel}>Pulso</Text>
+
+              <View style={styles.centerCard}>
+                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+                  <Ionicons name="heart" size={25} color="#FF3B30" />
+                </Animated.View>
+
+                <Text style={styles.bmiValue}>{displayBPM} BPM</Text>
               </View>
             </View>
-            <View style={styles.bmiRow2}>
-              <View style={styles.bmiItem}>
-                <Text style={styles.bmiLabel}>Pulso</Text>
-                <View style={styles.centerCard}>
-                  <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-                    <Ionicons name="heart" size={25} color="#FF3B30" />
-                  </Animated.View>
-                  <Text style={styles.bmiValue}>{bpm} BPM</Text>
-                </View>
-              </View>
-              <View style={styles.bmiItem}>
-                <Text style={styles.bmiLabel}>Esfuerzo</Text>
-                <View style={styles.centerCard}>
-                  <Text style={styles.bmiValue}>{computedEffort}%</Text>
-                  <Text style={[styles.bmiStatusValue, { color: effortStatusColor }]}>{effortStatusLabel}</Text>
-                </View>
+
+            <View style={styles.bmiItem}>
+              <Text style={styles.bmiLabel}>Esfuerzo</Text>
+
+              <View style={styles.centerCard}>
+                <Text style={styles.bmiValue}>{displayData.effort}%</Text>
+                <Text
+                  style={[
+                    styles.bmiStatusValue,
+                    { color: getEffortStatusColor(displayData.effort) },
+                  ]}
+                >
+                  {getEffortStatus(displayData.effort)}
+                </Text>
               </View>
             </View>
           </View>
         </View>
+      </View>
  
-        {/* --- STATS DEL DÍA SELECCIONADO --- */}
+        {/* --- STATS DEL DÍA SELECCIONADO (Ahora usa sessions guardadas) --- */}
         <View style={styles.switcher}>
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" onPress={() => setDayOffset((n) => Math.min(6, n + 1))} />
           <Text style={styles.switcherTitle}>{formatDay(selectedDate)}</Text>
           <Ionicons name="chevron-forward" size={20} color="#FFFFFF" onPress={() => setDayOffset((n) => Math.max(0, n - 1))} />
         </View>
-        
 
         {statItems.map((s, i) => (
           <View key={i} style={[styles.cardLarge, { flexDirection: 'row', alignItems: 'center', padding: 12 }]}>
@@ -704,6 +1056,29 @@ export default function Home() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertBox}>
+            
+            {/* Botón X arriba */}
+            <Pressable style={styles.alertCloseButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.alertCloseButtonText}>✕</Text>
+            </Pressable>
+            {/* Título */}
+            <Text style={styles.alertTitle}>{modalTitle}</Text>
+            {/* Mensaje */}
+            <Text style={styles.alertMessage}>{modalMessage}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -853,4 +1228,61 @@ const styles = StyleSheet.create({
   routeButton: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 18 },
   routeButtonText: { fontFamily: fonts.semibold, fontSize: 15 },
   italicText: {fontStyle: 'italic'},
+  /* ------------------------------- Alert Modal ------------------------------- */
+
+  alertOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+
+  alertBox: {
+    backgroundColor: '#1e1e1e',
+    padding: 25,
+    borderRadius: 12,
+    width: '80%',
+    alignItems: 'center',
+    position: 'relative',
+  },
+
+  alertCloseButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 6,
+  },
+
+  alertCloseButtonText: {
+    color: '#888',
+    fontSize: 18,
+  },
+
+  alertTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+
+  alertMessage: {
+    color: '#ccc',
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+
+  alertOkButton: {
+    backgroundColor: '#444',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+  },
+
+  alertOkButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
 });

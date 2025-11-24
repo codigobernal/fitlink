@@ -9,7 +9,7 @@ export default function Landing() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace("/loader"); // navega a la siguiente vista
+      router.replace("/main"); // navega a la siguiente vista
     }, 1500);
 
     return () => clearTimeout(timer);

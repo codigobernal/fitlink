@@ -80,8 +80,15 @@ export default function Landing() {
                   fontWeight: 'bold',
                 },
               ]}
-            >
-              fitLink
+            >f<Text
+              style={[
+                styles.brandG,
+                {
+                  fontSize: brandSize,
+                  fontWeight: 'bold',
+                },
+              ]}
+            >i</Text>tLink
             </Text>
 
             <Text
@@ -155,6 +162,9 @@ const styles = StyleSheet.create({
   brand: {
     color: "#FFF",
     marginBottom: 10,
+  },
+  brandG: {
+    color: "#A6FF00",
   },
   subtitle: {
     color: "#FFF",

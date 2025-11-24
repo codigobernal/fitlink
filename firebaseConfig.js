@@ -1,7 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
 import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDQuDInfRuFi8Hw1ZuSW71N7HnJrQn47xo",
@@ -13,22 +13,19 @@ const firebaseConfig = {
   appId: "1:272620836039:web:e112d3774df77019989ae2",
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app); 
+const db = getDatabase(app);
 
-let auth; // Declaración simple de variable (permite que sea 'any' en JS)
+let auth;
 
 try {
-  // Usar persistencia nativa si AsyncStorage está disponible
-  const ReactNativeAsyncStorage = require('@react-native-async-storage/async-storage').default;
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+    persistence: getReactNativePersistence(AsyncStorage),
   });
 } catch (e) {
   auth = getAuth(app);
-  console.error("Error al inicializar Auth con persistencia nativa:", e);
+  console.warn("Error al inicializar Auth con persistencia nativa:", e);
 }
 
-// Exportamos auth y db
 export { auth, db };
+

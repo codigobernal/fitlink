@@ -5,10 +5,8 @@ import { onValue, ref, update } from 'firebase/database'; // Importar update y r
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// Asegúrate de que AuthBackground sea accesible o reemplaza con un componente de fondo si es necesario
-// import AuthBackground from '@/components/auth/AuthBackground';
 import { fonts } from '../../constants/fonts';
-import { auth, db } from '../../firebaseConfig'; // Importar auth y db
+import { auth, db } from '../../firebaseConfig.js';
 
 // Simulación de AuthBackground si no está disponible
 const AuthBackground = ({ children }: { children: React.ReactNode }) => (

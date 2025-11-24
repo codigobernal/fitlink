@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import AuthBackground from '@/components/auth/AuthBackground';
-import { auth } from '../../firebaseConfig';
+import { auth } from '../../firebaseConfig.js';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { fonts } from '../../constants/fonts';
 

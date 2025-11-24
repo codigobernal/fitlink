@@ -3,11 +3,11 @@ import { router } from 'expo-router';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { onValue, ref } from 'firebase/database';
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts } from '../../../constants/fonts';
 import { useAuth } from '../../../context/AuthContext';
-import { auth, db } from '../../../firebaseConfig';
+import { auth, db } from '../../../firebaseConfig.js';
  
 const OPTION_STYLES = {
   change: { background: '#3d300eff', color: '#FFD166' },
@@ -21,10 +21,13 @@ type ProfileIcon = { name?: keyof typeof Ionicons.glyphMap; color?: string };
 export default function Informacion() {
   const insets = useSafeAreaInsets();
   const { setUser } = useAuth();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
   const [name, setName] = useState<string | null>(auth.currentUser?.displayName ?? null);
   const [email, setEmail] = useState<string | null>(auth.currentUser?.email ?? null);
   const [profileIcon, setProfileIcon] = useState<ProfileIcon>({});
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
  
   useEffect(() => {
     let detachDb: undefined | (() => void);
@@ -55,9 +58,11 @@ export default function Informacion() {
     router.replace('/(auth)/login'); // Redirige a pantalla de login
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
-    Alert.alert('Error', 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
+    setModalTitle('Error');
+    setModalMessage('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+    setLogoutModalVisible(true);
   } finally {
-    setModalVisible(false);
+    setLogoutModalVisible(false);
   }
 };
 
@@ -88,7 +93,7 @@ export default function Informacion() {
           label="Cerrar sesión"
           background="#3a0b3cff"
           color="#ff6bd5ff"
-          onPress={() => setModalVisible(true)}
+          onPress={() => setLogoutModalVisible(true)}
           />
       </ScrollView>
 
@@ -96,20 +101,17 @@ export default function Informacion() {
             <Modal
                 transparent
                 animationType="fade"
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                visible={logoutModalVisible}
+                onRequestClose={() => setLogoutModalVisible(false)}
               >
                 <View style={styles.modalOverlay}>
                   <View style={styles.modalContent}>
-                    <Text style={styles.modalText}>Confirmar eliminación</Text>
-                    <Text style={[styles.modalText, { fontWeight: 'normal', fontSize: 14, marginBottom: 25 }]}>
-                      Se eliminará tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.
-                    </Text>
+                    <Text style={styles.modalText}>¿Deseas cerrar sesión?</Text>
       
                     <View style={styles.modalActions}>
                       <Pressable
                         style={[styles.modalButton, styles.modalCancelButton]}
-                        onPress={() => setModalVisible(false)}
+                        onPress={() => setLogoutModalVisible(false)}
                       >
                         <Text style={styles.modalCancelButtonText}>Cancelar</Text>
                       </Pressable>
@@ -123,6 +125,28 @@ export default function Informacion() {
                   </View>
                 </View>
               </Modal>
+
+              <Modal
+                            transparent
+                            animationType="fade"
+                            visible={alertVisible}
+                            onRequestClose={() => setAlertVisible(false)}
+                          >
+                            <View style={styles.alertOverlay}>
+                              <View style={styles.alertBox}>
+                                
+                                {/* Botón X arriba */}
+                                <Pressable style={styles.alertCloseButton} onPress={() => setAlertVisible(false)}>
+                                  <Text style={styles.alertCloseButtonText}>✕</Text>
+                                </Pressable>
+                                {/* Título */}
+                                <Text style={styles.alertTitle}>{modalTitle}</Text>
+                                {/* Mensaje */}
+                                <Text style={styles.alertMessage}>{modalMessage}
+                                </Text>
+                              </View>
+                            </View>
+                          </Modal>
     </SafeAreaView>
   );
 }
@@ -195,5 +219,63 @@ const styles = StyleSheet.create({
   modalCancelButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+
+  /* ------------------------------- Alert Modal ------------------------------- */
+
+  alertOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+
+  alertBox: {
+    backgroundColor: '#1e1e1e',
+    padding: 25,
+    borderRadius: 12,
+    width: '80%',
+    alignItems: 'center',
+    position: 'relative',
+  },
+
+  alertCloseButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 6,
+  },
+
+  alertCloseButtonText: {
+    color: '#888',
+    fontSize: 18,
+  },
+
+  alertTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+
+  alertMessage: {
+    color: '#ccc',
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+
+  alertOkButton: {
+    backgroundColor: '#444',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+  },
+
+  alertOkButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
