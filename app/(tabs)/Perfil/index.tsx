@@ -85,7 +85,7 @@ export default function Informacion() {
  
         <Option icon="key" label="Modificar contraseña" background={OPTION_STYLES.change.background} color={OPTION_STYLES.change.color} onPress={() => router.push('/(tabs)/Perfil/change-password')} />
         <Option icon="trash" label="Borrar datos" background={OPTION_STYLES.delete.background} color={OPTION_STYLES.delete.color} onPress={() => router.push('/(tabs)/Perfil/delete-data')} />
-        <Option icon="information-circle" label="Acerca de nosotros" background={OPTION_STYLES.about.background} color={OPTION_STYLES.about.color} onPress={() => router.push('/(tabs)/Perfil/about')} />
+        {/* <Option icon="information-circle" label="Acerca de nosotros" background={OPTION_STYLES.about.background} color={OPTION_STYLES.about.color} onPress={() => router.push('/(tabs)/Perfil/about')} /> */}
         <Option icon="help-circle" label="Ayuda" background={OPTION_STYLES.help.background} color={OPTION_STYLES.help.color} onPress={() => router.push('/(tabs)/Perfil/help')} />
         <Option icon="document-text" label="Aviso de privacidad" background="rgba(58, 68, 13, 1)" color="#FFF700" onPress={() => router.push('/(tabs)/Perfil/privacy')} />
         <Option
