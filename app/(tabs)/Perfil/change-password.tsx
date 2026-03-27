@@ -1,41 +1,122 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useAuth } from '../../../context/AuthContext'; // asegúrate de importar tu contexto
 
 export default function ChangePassword() {
+  const { user } = useAuth();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
-  const enabled = next.length >= 6 && next === confirm && current.length > 0;
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const validatePasswords = (): string | null => {
+    if (next.length < 8) {
+      return 'La nueva contraseña debe tener al menos 8 caracteres';
+    }
+    if (!/[A-Z]/.test(next)) {
+      return 'Debe incluir al menos una letra mayúscula';
+    }
+    if (!/[a-z]/.test(next)) {
+      return 'Debe incluir al menos una letra minúscula';
+    }
+    if (!/[0-9]/.test(next)) {
+      return 'Debe incluir al menos un número';
+    }
+    if (!/[!@#$%^&*]/.test(next)) {
+      return 'Debe incluir al menos un carácter especial (!@#$%^&*)';
+    }
+    if (next !== confirm) {
+      return 'Las contraseñas no coinciden';
+    }
+    return null;
+  };
+
+  const onSubmit = async () => {
+    const validationError = validatePasswords();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser || !user?.email) {
+        throw new Error('No se encontró usuario autenticado.');
+      }
+
+      // 🔒 Reautenticar al usuario antes de cambiar contraseña
+      const credential = EmailAuthProvider.credential(user.email, current);
+      await reauthenticateWithCredential(currentUser, credential);
+
+      // ✅ Actualizar contraseña
+      await updatePassword(currentUser, next);
+
+      Alert.alert('Éxito', 'Tu contraseña ha sido actualizada correctamente.');
+      router.back();
+    } catch (err: any) {
+      console.error('Error al cambiar la contraseña:', err);
+      if (err.code === 'auth/wrong-password') {
+        setError('La contraseña actual es incorrecta.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('La nueva contraseña es demasiado débil.');
+      } else {
+        setError('No se pudo actualizar la contraseña. Inténtalo nuevamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.headerRow}>
+        <View style={[styles.headerRow, {marginTop: 10}]}>
           <Pressable hitSlop={12} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.h1}>Modificar contrasena</Text>
+          <Text style={styles.h1}>
+            <Text style={styles.boldText}>Modificar contraseña</Text>
+
+          </Text>
         </View>
 
         <View style={styles.card}>
-          <Field
-            label="Ingrese su contrasena:"
-            value={current}
-            onChangeText={setCurrent}
-          />
-          <Field label="Contrasena nueva:" value={next} onChangeText={setNext} />
-          <Field label="Confirme su contrasena nueva:" value={confirm} onChangeText={setConfirm} />
+          <Field label="Ingrese su contraseña actual:" value={current} onChangeText={setCurrent} />
+          <Field label="Contraseña nueva:" value={next} onChangeText={setNext} />
+          <Field label="Confirme su contraseña nueva:" value={confirm} onChangeText={setConfirm} />
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable
-            disabled={!enabled}
+            disabled={!current || !next || !confirm || loading}
+            onPress={onSubmit}
             style={({ pressed }) => [
               styles.primaryBtn,
-              { opacity: enabled ? (pressed ? 0.9 : 1) : 0.4 },
+              {
+                opacity: current && next && confirm ? (pressed ? 0.9 : 1) : 0.4,
+              },
             ]}
           >
-            <Text style={styles.primaryText}>Confirmar</Text>
+            {loading ? <ActivityIndicator color="#111" /> : <Text style={styles.primaryText}>Confirmar</Text>}
           </Pressable>
         </View>
       </ScrollView>
@@ -91,4 +172,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryText: { color: '#111', fontFamily: 'SFProRounded-Semibold', fontSize: 16 },
+  error: {
+    color: '#f04d4d',
+    marginBottom: 12,
+    fontFamily: 'SFProRounded-Regular',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  boldText: { fontWeight: 'bold' },
 });
